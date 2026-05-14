@@ -1,12 +1,9 @@
-eps = 1e-8
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # VwapSignal indicator
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
+    eps = config.eps
     """
     # N=20
     # Typical=(HIGH+LOW+CLOSE)/3
@@ -16,14 +13,14 @@ def signal(*args):
     # VWAP=MF_SUM/VOLUME_SUM
     # VWAP computes the volume-weighted average price. Buy when current price crosses above VWAP; sell when it crosses below.
     """
-    df['tp'] = df[['high', 'low', 'close']].sum(axis=1) / 3
-    df['mf'] = df['volume'] * df['tp']
-    df['vol_sum'] = df['volume'].rolling(n, min_periods=1).sum()
-    df['mf_sum'] = df['mf'].rolling(n, min_periods=1).sum()
-    df['vwap'] = df['mf_sum'] / (eps + df['vol_sum'])
-    df[factor_name] = df['tp'] / (df['vwap'] + eps) - 1
+    df = df.with_columns(pl.Series("tp", (df["high"] + df["low"] + df["close"]) / 3))
+    df = df.with_columns(pl.Series("mf", df["volume"] * df["tp"]))
+    df = df.with_columns(pl.Series("vol_sum", df["volume"].rolling_sum(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("mf_sum", df["mf"].rolling_sum(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("vwap", df["mf_sum"] / (eps + df["vol_sum"])))
+    df = df.with_columns(pl.Series(factor_name, df["tp"] / (df["vwap"] + eps) - 1))
 
     # remove redundant columns
-    del df['tp'], df['mf'], df['vol_sum'], df['mf_sum'], df['vwap']
+    df = df.drop(["tp", "mf", "vol_sum", "mf_sum", "vwap"])
 
     return df

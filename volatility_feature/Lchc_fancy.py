@@ -1,9 +1,14 @@
-def signal(*args):
-    # Ratio of current price to the highest and lowest prices over the past N minutes, checking whether upward or downward momentum is stronger
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
-    df[factor_name] = -1 * df['low'].rolling(n, min_periods=1).min() / df['close'] - df['high'].rolling(n, min_periods=1).max() / df['close']
+
+def signal(df, n, factor_name, config):
+    # Ratio of current price to the highest and lowest prices over the past N minutes, checking whether upward or downward momentum is stronger
+    df = df.with_columns(
+        pl.Series(
+            factor_name,
+            -1 * df["low"].rolling_min(n, min_samples=config.min_periods) / df["close"]
+            - df["high"].rolling_max(n, min_samples=config.min_periods) / df["close"],
+        )
+    )
 
     return df

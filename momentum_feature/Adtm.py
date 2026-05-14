@@ -1,15 +1,12 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # ADTM indicator
     """
     N=20
-    DTM=IF(OPEN>REF(OPEN,1),MAX(HIGH-OPEN,OPEN-REF(OP
-    EN,1)),0)
-    DBM=IF(OPEN<REF(OPEN,1),MAX(OPEN-LOW,REF(OPEN,1)-O
-    PEN),0)
+    DTM=IF(OPEN>REF(OPEN,1),MAX(HIGH-OPEN,OPEN-REF(OPEN,1)),0)
+    DBM=IF(OPEN<REF(OPEN,1),MAX(OPEN-LOW,REF(OPEN,1)-OPEN),0)
     STM=SUM(DTM,N)
     SBM=SUM(DBM,N)
     ADTM=(STM-SBM)/MAX(STM,SBM)
@@ -18,31 +15,33 @@ def signal(*args):
     when ADTM crosses below -0.5, market sentiment is weak. We generate trading signals accordingly.
     A buy signal is generated when ADTM crosses above 0.5;
     a sell signal is generated when ADTM crosses below -0.5.
-
     """
-    df['h_o'] = df['high'] - df['open']
-    df['diff_open'] = df['open'] - df['open'].shift(1)
-    max_value1 = df[['h_o', 'diff_open']].max(axis=1)
-    df.loc[df['open'] > df['open'].shift(1), 'DTM'] = max_value1
-    df['DTM'].fillna(value=0, inplace=True)
+    df = df.with_columns(
+        h_o=pl.col("high") - pl.col("open"),
+        diff_open=pl.col("open") - pl.col("open").shift(1),
+    )
+    df = df.with_columns(
+        DTM=pl.when(pl.col("open") > pl.col("open").shift(1))
+        .then(pl.max_horizontal([pl.col("h_o"), pl.col("diff_open")]))
+        .otherwise(0.0)
+    )
 
-    df['o_l'] = df['open'] - df['low']
-    max_value2 = df[['o_l', 'diff_open']].max(axis=1)
-    # DBM = pd.where(df['open'] < df['open'].shift(1), max_value2, 0)
-    df.loc[df['open'] < df['open'].shift(1), 'DBM'] = max_value2
-    df['DBM'].fillna(value=0, inplace=True)
+    df = df.with_columns(
+        o_l=pl.col("open") - pl.col("low"),
+    )
+    df = df.with_columns(
+        DBM=pl.when(pl.col("open") < pl.col("open").shift(1))
+        .then(pl.max_horizontal([pl.col("o_l"), pl.col("diff_open")]))
+        .otherwise(0.0)
+    )
 
-    df['STM'] = df['DTM'].rolling(n).sum()
-    df['SBM'] = df['DBM'].rolling(n).sum()
-    max_value3 = df[['STM', 'SBM']].max(axis=1)
-    df[factor_name] = (df['STM'] - df['SBM']) / max_value3
+    df = df.with_columns(
+        STM=pl.col("DTM").rolling_sum(n, min_samples=config.min_periods),
+        SBM=pl.col("DBM").rolling_sum(n, min_samples=config.min_periods),
+    )
+    df = df.with_columns(max_val=pl.max_horizontal([pl.col("STM"), pl.col("SBM")]))
+    df = df.with_columns(pl.Series(factor_name, (df["STM"] - df["SBM"]) / (df["max_val"] + config.eps)))
 
-    del df['h_o']
-    del df['diff_open']
-    del df['o_l']
-    del df['STM']
-    del df['SBM']
-    del df['DBM']
-    del df['DTM']
+    df = df.drop(["h_o", "diff_open", "o_l", "STM", "SBM", "DBM", "DTM", "max_val"])
 
     return df

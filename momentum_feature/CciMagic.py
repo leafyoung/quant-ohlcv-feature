@@ -1,8 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # CciMagic indicator (Modified CCI using MA of OHLC prices)
     # Formula: TP = (MA(HIGH,N) + MA(LOW,N) + MA(CLOSE,N)) / 3
     #          MA_TP = MA(TP, N); MD = MA(|MA_TP - MA(CLOSE,N)|, N)
@@ -11,13 +10,13 @@ def signal(*args):
     # This reduces noise compared to standard CCI computed on raw prices.
 
     # calculate modified CCI indicator
-    open_ma = df['open'].rolling(n, min_periods=1).mean()
-    high_ma = df['high'].rolling(n, min_periods=1).mean()
-    low_ma = df['low'].rolling(n, min_periods=1).mean()
-    close_ma = df['close'].rolling(n, min_periods=1).mean()
+    df["open"].rolling_mean(n, min_samples=config.min_periods)  # noqa: F841
+    high_ma = df["high"].rolling_mean(n, min_samples=config.min_periods)
+    low_ma = df["low"].rolling_mean(n, min_samples=config.min_periods)
+    close_ma = df["close"].rolling_mean(n, min_samples=config.min_periods)
     tp = (high_ma + low_ma + close_ma) / 3
-    ma = tp.rolling(n, min_periods=1).mean()
-    md = abs(ma - close_ma).rolling(n, min_periods=1).mean()
-    df[factor_name] = ((tp - ma) / md / 0.015)
+    ma = tp.rolling_mean(n, min_samples=config.min_periods)
+    md = abs(ma - close_ma).rolling_mean(n, min_samples=config.min_periods)
+    df = df.with_columns(pl.Series(factor_name, ((tp - ma) / md / 0.015)))
 
     return df

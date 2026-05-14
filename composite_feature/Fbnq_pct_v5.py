@@ -1,8 +1,8 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import numpy as np
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # Fbnq_pct_v5 indicator (Fibonacci multi-period momentum × volatility composite)
     # Formula: FBNQ_MEAN = mean of EMA(CLOSE, pn) for pn in [5,8,13,21,34,55,89]; momentum = FBNQ_MEAN.pct_change(N)
     #          BBW = mean of STD(CLOSE,N)/MA(CLOSE,N) for pn in [5,8,13,21,34,55,89]
@@ -11,22 +11,23 @@ def signal(*args):
     # then multiplies by the average Bollinger bandwidth to scale momentum by market volatility.
     # Positive values indicate trending upward momentum with elevated volatility.
     params = [5, 8, 13, 21, 34, 55, 89]
-    df['Fbnq_mean'] = 0
-    df['BbwOri'] = 0
+    fbnq_sum = pl.Series(np.zeros(len(df)))
+    bbw_sum = pl.Series(np.zeros(len(df)))
     for pn in params:
         # momentum
-        df['Fbnq_mean'] += df['close'].ewm(span=pn, adjust=False).mean()
+        fbnq_sum = fbnq_sum + df["close"].ewm_mean(span=pn, adjust=config.ewm_adjust)
         # volatility
-        df['BbwOri'] += df['close'].rolling(n).std(ddof=0) / df['close'].rolling(n, min_periods=1).mean()
+        bbw_sum = bbw_sum + df["close"].rolling_std(n, ddof=config.ddof, min_samples=config.min_periods) / df[
+            "close"
+        ].rolling_mean(n, min_samples=config.min_periods)
     # momentum
-    df['Fbnq_mean'] = df['Fbnq_mean'] / len(params)
-    df['Fbnq_mean'] = df['Fbnq_mean'].pct_change(n)
+    fbnq_mean = fbnq_sum / len(params)
+    fbnq_mean = fbnq_mean.pct_change(n)
 
     # volatility
-    df['BbwOri'] = df['BbwOri'] / len(params)
+    bbw_ori = bbw_sum / len(params)
 
     # momentum * volatility
-    df[factor_name] = df['Fbnq_mean'] * df['BbwOri']
-    del df['Fbnq_mean'], df['BbwOri']
+    df = df.with_columns(pl.Series(factor_name, fbnq_mean * bbw_ori))
 
     return df

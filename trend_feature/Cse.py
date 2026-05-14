@@ -1,6 +1,7 @@
-def signal(*args):
-    df, n, factor_name = args
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # Cse indicator (Time-series normalized close, EMA smoothed)
     # Formula: CLOSE_STD = (CLOSE - MIN(CLOSE,N)) / (MAX(CLOSE,N) - MIN(CLOSE,N))
     #          result = EMA(CLOSE_STD, N-1)
@@ -8,9 +9,10 @@ def signal(*args):
     # Values near 1 indicate close is near the top of its N-period range (bullish); near 0 indicates bottom.
 
     # time-series normalization
-    cr = df['close'].rolling(n, min_periods=1)
-    close_standard = (df['close'] - cr.min()) / (cr.max() - cr.min())
+    close_min = df["close"].rolling_min(n, min_samples=config.min_periods)
+    close_max = df["close"].rolling_max(n, min_samples=config.min_periods)
+    close_standard = (df["close"] - close_min) / (close_max - close_min)
     # exponential moving average
-    df[factor_name] = close_standard.ewm(span=n - 1, min_periods=1, adjust=False).mean()
+    df = df.with_columns(pl.Series(factor_name, close_standard.ewm_mean(span=n - 1, adjust=config.ewm_adjust)))
 
     return df

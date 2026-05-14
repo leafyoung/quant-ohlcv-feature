@@ -1,10 +1,8 @@
 import numpy as np
+import polars as pl
 
 
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+def signal(df, n, factor_name, config):
     # Si indicator
     """
     A=ABS(HIGH-REF(CLOSE,1))
@@ -25,31 +23,48 @@ def signal(*args):
     close-open difference, today's close-open difference) to reflect price movement.
     Buy/sell signals are generated when Si crosses above/below 0.
     """
-    df['A'] = abs(df['high'] - df['close'].shift(1))
-    df['B'] = abs(df['low'] - df['close'].shift(1))
-    df['C'] = abs(df['high'] - df['low'].shift(1))
-    df['D'] = abs(df['close'].shift(1) - df['open'].shift(1))
-    df['K'] = df[['A', 'B']].max(axis=1)
-    df['M'] = (df['high'] - df['low']).rolling(n).max()
-    df['R1'] = df['A'] + 0.5 * df['B'] + 0.25 * df['D']
-    df['R2'] = df['B'] + 0.5 * df['A'] + 0.25 * df['D']
-    df['R3'] = df['C'] + 0.25 * df['D']
-    df['R4'] = np.where((df['A'] >= df['B']) & (df['A'] >= df['C']), df['R1'], df['R2'])
-    df['R'] = np.where((df['C'] >= df['A']) & (df['C'] >= df['B']), df['R3'], df['R4'])
-    df[factor_name] = 50 * (df['close'] - df['close'].shift(1) + (df['close'].shift(1) - df['open'].shift(1)) +
-                     0.5 * (df['close'] - df['open'])) / df['R'] * df['K'] / df['M']
+    df = df.with_columns(pl.Series("A", abs(df["high"] - df["close"].shift(1))))
+    df = df.with_columns(pl.Series("B", abs(df["low"] - df["close"].shift(1))))
+    df = df.with_columns(pl.Series("C", abs(df["high"] - df["low"].shift(1))))
+    df = df.with_columns(pl.Series("D", abs(df["close"].shift(1) - df["open"].shift(1))))
+    df = df.with_columns(K=pl.max_horizontal([pl.col("A"), pl.col("B")]))
+    df = df.with_columns(pl.Series("M", (df["high"] - df["low"]).rolling_max(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("R1", df["A"] + 0.5 * df["B"] + 0.25 * df["D"]))
+    df = df.with_columns(pl.Series("R2", df["B"] + 0.5 * df["A"] + 0.25 * df["D"]))
+    df = df.with_columns(pl.Series("R3", df["C"] + 0.25 * df["D"]))
+    df = df.with_columns(
+        pl.Series("R4", np.where((df["A"] >= df["B"]) & (df["A"] >= df["C"]), df["R1"], df["R2"])).fill_nan(None)
+    )
+    df = df.with_columns(
+        pl.Series("R", np.where((df["C"] >= df["A"]) & (df["C"] >= df["B"]), df["R3"], df["R4"])).fill_nan(None)
+    )
+    df = df.with_columns(
+        pl.Series(
+            factor_name,
+            50
+            * (
+                df["close"]
+                - df["close"].shift(1)
+                + (df["close"].shift(1) - df["open"].shift(1))
+                + 0.5 * (df["close"] - df["open"])
+            )
+            / df["R"]
+            * df["K"]
+            / df["M"],
+        )
+    )
 
-    del df['A']
-    del df['B']
-    del df['C']
-    del df['D']
-    del df['K']
-    del df['M']
-    del df['R1']
-    del df['R2']
-    del df['R3']
-    del df['R4']
-    del df['R']
-    # del df['Si']
+    df = df.drop("A")
+    df = df.drop("B")
+    df = df.drop("C")
+    df = df.drop("D")
+    df = df.drop("K")
+    df = df.drop("M")
+    df = df.drop("R1")
+    df = df.drop("R2")
+    df = df.drop("R3")
+    df = df.drop("R4")
+    df = df.drop("R")
+    # df = df.drop('Si')
 
     return df

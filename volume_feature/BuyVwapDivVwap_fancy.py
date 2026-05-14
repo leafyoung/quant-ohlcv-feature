@@ -1,13 +1,33 @@
-def signal(*args):
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # ratio of taker buy VWAP to current VWAP.
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+    df = df.with_columns(
+        pl.Series(
+            "vwap",
+            df["quote_volume"].rolling_sum(n, min_samples=config.min_periods)
+            / df["volume"].rolling_sum(n, min_samples=config.min_periods),
+        )
+    )
+    if "taker_buy_base_asset_volume" in df.columns:
+        df = df.with_columns(
+            pl.Series(
+                "buy_vwap",
+                df["taker_buy_quote_asset_volume"].rolling_sum(n, min_samples=config.min_periods)
+                / df["taker_buy_base_asset_volume"].rolling_sum(n, min_samples=config.min_periods),
+            )
+        )
+    else:
+        df = df.with_columns(
+            pl.Series(
+                "buy_vwap",
+                df["taker_buy_quote_asset_volume"].rolling_sum(n, min_samples=config.min_periods)
+                / df["volume"].rolling_sum(n, min_samples=config.min_periods),
+            )
+        )
+    df = df.with_columns(pl.Series(factor_name, df["buy_vwap"] / df["vwap"]))
 
-    df['vwap'] = df['quote_volume'].rolling(n, min_periods=1).sum() / df['volume'].rolling(n, min_periods=1).sum()
-    df['buy_vwap'] = df['taker_buy_quote_asset_volume'].rolling(n, min_periods=1).sum() / df['taker_buy_base_asset_volume'].rolling(n, min_periods=1).sum()
-    df[factor_name] = df['buy_vwap'] / df['vwap']
-
-    del df['vwap'], df['buy_vwap']
+    df = df.drop(["vwap", "buy_vwap"])
 
     return df

@@ -1,12 +1,8 @@
 import numpy as np
-import pandas as pd
+import polars as pl
 
 
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
+def signal(df, n, factor_name, config):
     # Adx indicator
     """
     N1=14
@@ -24,21 +20,24 @@ def signal(*args):
     daily highs and lows to reflect price trend direction. A buy signal is generated when
     Di+ crosses above Di-; a sell signal when Di+ crosses below Di-.
     """
-    max_high = np.where(df['high'] > df['high'].shift(1), df['high'] - df['high'].shift(1), 0)
-    max_low = np.where(df['low'].shift(1) > df['low'], df['low'].shift(1) - df['low'], 0)
-    xpdm = np.where(pd.Series(max_high) > pd.Series(max_low), pd.Series(max_high) - pd.Series(max_high).shift(1), 0)
-    # xndm = np.where(pd.Series(max_low) > pd.Series(max_high), pd.Series(max_low).shift(1) - pd.Series(max_low), 0)
-    tr = np.max(np.array([
-        (df['high'] - df['low']).abs(),
-        (df['high'] - df['close']).abs(),
-        (df['low'] - df['close']).abs()
-    ]), axis=0)  # take the maximum of the three series
-    pdm = pd.Series(xpdm).rolling(n, min_periods=1).sum()
-    # ndm = pd.Series(xndm).rolling(n, min_periods=1).sum()
+    max_high = np.where(df["high"] > df["high"].shift(1), df["high"] - df["high"].shift(1), 0)
+    max_high = pl.Series(max_high).fill_nan(None)
+    max_low = np.where(df["low"].shift(1) > df["low"], df["low"].shift(1) - df["low"], 0)
+    max_low = pl.Series(max_low).fill_nan(None)
+    xpdm = np.where(
+        pl.Series(max_high).fill_nan(None) > pl.Series(max_low), pl.Series(max_high) - pl.Series(max_high).shift(1), 0
+    )
+    # xndm = np.where(pl.Series(max_low).fill_nan(None) > pl.Series(max_high), pl.Series(max_low).shift(1) - pl.Series(max_low), 0)
+    tr = np.max(
+        np.array([(df["high"] - df["low"]).abs(), (df["high"] - df["close"]).abs(), (df["low"] - df["close"]).abs()]),
+        axis=0,
+    )  # take the maximum of the three series
+    pdm = pl.Series(xpdm).rolling_sum(n, min_samples=config.min_periods)
+    # ndm = pl.Series(xndm).rolling_sum(n, min_samples=config.min_periods)
 
-    di_pos = pd.Series(pdm / pd.Series(tr).rolling(n, min_periods=1).sum())
-    # di_neg = pd.Series(ndm / pd.Series(tr).rolling(n, min_periods=1).sum())
+    di_pos = pl.Series(pdm / pl.Series(tr).rolling_sum(n, min_samples=config.min_periods))
+    # di_neg = pl.Series(ndm / pl.Series(tr).rolling_sum(n, min_samples=config.min_periods))
 
-    df[factor_name] = 0.5 * pd.Series(di_pos) + 0.5 * pd.Series(di_pos).shift(n)
+    df = df.with_columns(pl.Series(factor_name, 0.5 * pl.Series(di_pos) + 0.5 * pl.Series(di_pos).shift(n)))
 
     return df

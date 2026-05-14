@@ -1,19 +1,10 @@
 import numpy as np
-import pandas as pd
+import polars as pl
+
+from helpers import scale_01
 
 
-# ===== Function: 0-1 normalization
-def scale_01(_s, _n):
-    _s = (pd.Series(_s) - pd.Series(_s).rolling(_n, min_periods=1).min()) / (
-        1e-9 + pd.Series(_s).rolling(_n, min_periods=1).max() - pd.Series(_s).rolling(_n, min_periods=1).min()
-    )
-    return pd.Series(_s)
-    
-
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+def signal(df, n, factor_name, config):
     # ******************** TII ********************
     # N1=40
     # M=[N1/2]+1
@@ -32,14 +23,16 @@ def signal(*args):
     # Several methods can be used to generate signals: cross above 20 to buy, cross below 80 to sell (reversal);
     # cross above 50 to buy, cross below 50 to sell; or cross above signal line to buy, cross below to sell.
     # A buy signal is generated when TII crosses above TII_SIGNAL; a sell signal when TII crosses below TII_SIGNAL.
-    close_ma = df['close'].rolling(n, min_periods=1).mean()
-    dev = df['close'] - close_ma
+    close_ma = df["close"].rolling_mean(n, min_samples=config.min_periods)
+    dev = df["close"] - close_ma
     devpos = np.where(dev > 0, dev, 0)
+    devpos = pl.Series(devpos).fill_nan(None)
     devneg = np.where(dev < 0, -dev, 0)
-    sumpos = pd.Series(devpos).rolling(int(1 + n / 2), min_periods=1).sum()
-    sumneg = pd.Series(devneg).rolling(int(1 + n / 2), min_periods=1).sum()
+    devneg = pl.Series(devneg).fill_nan(None)
+    sumpos = pl.Series(devpos).rolling_sum(int(1 + n / 2), min_samples=config.min_periods)
+    sumneg = pl.Series(devneg).rolling_sum(int(1 + n / 2), min_samples=config.min_periods)
 
     tii = 100 * sumpos / (sumpos + sumneg)
-    df[factor_name] = scale_01(tii, n)
+    df = df.with_columns(pl.Series(factor_name, scale_01(tii, n, config.normalize_eps, config=config)))
 
     return df

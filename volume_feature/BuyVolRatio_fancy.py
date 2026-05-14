@@ -1,9 +1,14 @@
-def signal(*args):
-    # taker buy ratio over the past N periods
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
-    df[factor_name] = df['taker_buy_quote_asset_volume'].rolling(n, min_periods=1).sum() / df['quote_volume'].rolling(n, min_periods=1).sum()
+
+def signal(df, n, factor_name, config):
+    # taker buy ratio over the past N periods
+    df = df.with_columns(
+        pl.Series(
+            factor_name,
+            df["taker_buy_quote_asset_volume"].rolling_sum(n, min_samples=config.min_periods)
+            / df["quote_volume"].rolling_sum(n, min_samples=config.min_periods),
+        )
+    )
 
     return df

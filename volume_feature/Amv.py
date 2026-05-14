@@ -1,8 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # AMV indicator
     """
     N1=13
@@ -15,13 +14,28 @@ def signal(*args):
     moving average result, reducing the influence of low-volume price fluctuations.
     A buy/sell signal is generated when the short-term AMV line crosses above/below the long-term AMV line.
     """
-    df['AMOV'] = df['volume'] * (df['open'] + df['close']) / 2
-    df['AMV1'] = df['AMOV'].rolling(n).sum() / df['volume'].rolling(n).sum()
+    df = df.with_columns(pl.Series("AMOV", df["volume"] * (df["open"] + df["close"]) / 2))
+    df = df.with_columns(
+        pl.Series(
+            "AMV1",
+            df["AMOV"].rolling_sum(n, min_samples=config.min_periods)
+            / df["volume"].rolling_sum(n, min_samples=config.min_periods),
+        )
+    )
     # df['AMV2'] = df['AMOV'].rolling(n * 3).sum() / df['volume'].rolling(n * 3).sum()
     # normalize
-    df[factor_name] = (df['AMV1'] - df['AMV1'].rolling(n).min()) / (df['AMV1'].rolling(n).max() - df['AMV1'].rolling(n).min()) # normalize
-    
-    del df['AMOV']
-    del df['AMV1']
+    df = df.with_columns(
+        pl.Series(
+            factor_name,
+            (df["AMV1"] - df["AMV1"].rolling_min(n, min_samples=config.min_periods))
+            / (
+                df["AMV1"].rolling_max(n, min_samples=config.min_periods)
+                - df["AMV1"].rolling_min(n, min_samples=config.min_periods)
+            ),
+        )
+    )  # normalize
+
+    df = df.drop("AMOV")
+    df = df.drop("AMV1")
 
     return df

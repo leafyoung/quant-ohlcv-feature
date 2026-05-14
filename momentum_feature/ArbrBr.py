@@ -1,8 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # ARBR indicator
     """
     # AR=SUM((HIGH-OPEN),N)/SUM((OPEN-LOW),N)*100
@@ -14,11 +13,18 @@ def signal(*args):
     Sell when AR crosses below 200.
     """
 
-    df['HC'] = df['high'] - df['close'].shift(1)
-    df['CL'] = df['close'].shift(1) - df['low']
-    df[factor_name] = df['HC'].rolling(n).sum() / df['CL'].rolling(n).sum() * 100
+    df = df.with_columns(pl.Series("HC", df["high"] - df["close"].shift(1)))
+    df = df.with_columns(pl.Series("CL", df["close"].shift(1) - df["low"]))
+    df = df.with_columns(
+        pl.Series(
+            factor_name,
+            df["HC"].rolling_sum(n, min_samples=config.min_periods)
+            / df["CL"].rolling_sum(n, min_samples=config.min_periods)
+            * 100,
+        )
+    )
 
-    del df['HC']
-    del df['CL']
+    df = df.drop("HC")
+    df = df.drop("CL")
 
     return df

@@ -1,7 +1,8 @@
 import numpy as np
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # DO indicator
     """
     DO=EMA(EMA(RSI,N),M)
@@ -9,22 +10,18 @@ def signal(*args):
     the market is in an uptrend, less than 0 indicates a downtrend. We use DO crossing above/below
     its moving average to generate buy/sell signals.
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+    diff = df["close"].diff()
+    df = df.with_columns(pl.Series("up", np.where(diff > 0, diff, 0)).fill_nan(None))
+    df = df.with_columns(pl.Series("down", np.where(diff < 0, abs(diff), 0)).fill_nan(None))
+    A = df["up"].rolling_sum(n, min_samples=config.min_periods)
+    B = df["down"].rolling_sum(n, min_samples=config.min_periods)
+    df = df.with_columns(pl.Series("rsi", A / (A + B)))
+    df = df.with_columns(pl.Series("ema_rsi", df["rsi"].ewm_mean(span=n, adjust=config.ewm_adjust)))
+    df = df.with_columns(pl.Series(factor_name, df["ema_rsi"].ewm_mean(span=n, adjust=config.ewm_adjust)))
 
-    diff = df['close'].diff()
-    df['up'] = np.where(diff > 0, diff, 0)
-    df['down'] = np.where(diff < 0, abs(diff), 0)
-    A = df['up'].rolling(n).sum()
-    B = df['down'].rolling(n).sum()
-    df['rsi'] = A / (A + B)
-    df['ema_rsi'] = df['rsi'].ewm(n, adjust=False).mean()
-    df[factor_name] = df['ema_rsi'].ewm(n, adjust=False).mean()
-
-    del df['up']
-    del df['down']
-    del df['rsi']
-    del df['ema_rsi']
+    df = df.drop("up")
+    df = df.drop("down")
+    df = df.drop("rsi")
+    df = df.drop("ema_rsi")
 
     return df

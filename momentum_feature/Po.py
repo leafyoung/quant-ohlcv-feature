@@ -1,4 +1,7 @@
-def signal(*args):
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # PO indicator
     """
     EMA_SHORT=EMA(CLOSE,9)
@@ -8,12 +11,8 @@ def signal(*args):
     A buy signal is generated when PO crosses above 0;
     a sell signal is generated when PO crosses below 0.
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
-    ema_short = df['close'].ewm(n, adjust=False).mean()
-    ema_long = df['close'].ewm(n * 3, adjust=False).mean()
-    df[factor_name] = (ema_short - ema_long) / ema_long * 100
+    ema_short = df["close"].ewm_mean(span=n, adjust=config.ewm_adjust)
+    ema_long = df["close"].ewm_mean(span=n * 3, adjust=config.ewm_adjust)
+    df = df.with_columns(pl.Series(factor_name, (ema_short - ema_long) / ema_long * 100))
 
     return df

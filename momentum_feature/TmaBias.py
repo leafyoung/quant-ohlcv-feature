@@ -1,12 +1,9 @@
-eps = 1e-8
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # TmaBias
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-    
+    eps = config.eps
     """
     N=20
     CLOSE_MA=MA(CLOSE,N)
@@ -15,8 +12,8 @@ def signal(*args):
     closer to the current day, TMA gives more weight to prices in the middle of the considered
     time window. Buy/sell signals are generated when price crosses above/below TMA.
     """
-    ma = df['close'].rolling(n, min_periods=1).mean()  # CLOSE_MA=MA(CLOSE,N)
-    tma = ma.rolling(n, min_periods=1).mean()  # TMA=MA(CLOSE_MA,N)
-    df[factor_name] = df['close'] / (tma + eps) - 1
+    ma = df["close"].rolling_mean(n, min_samples=config.min_periods)  # CLOSE_MA=MA(CLOSE,N)
+    tma = ma.rolling_mean(n, min_samples=config.min_periods)  # TMA=MA(CLOSE_MA,N)
+    df = df.with_columns(pl.Series(factor_name, df["close"] / (tma + eps) - 1))
 
     return df

@@ -1,7 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # HmaSignal indicator
     """
     N=20
@@ -9,7 +9,7 @@ def signal(*args):
     The HmaSignal indicator is a simple moving average where the close price is replaced by the high price.
     A buy/sell signal is generated when the high price crosses above/below HmaSignal.
     """
-    hma = df['high'].rolling(n, min_periods=1).mean()
-    df[factor_name] = df['high'] - hma
+    hma = df["high"].rolling_mean(n, min_samples=config.min_periods)
+    df = df.with_columns(pl.Series(factor_name, df["high"] - hma))
 
     return df

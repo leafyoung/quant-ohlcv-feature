@@ -1,12 +1,10 @@
-eps = 1e-8
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # CCI - most commonly used T indicator
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-    '''
+    eps = config.eps
+    """
     N=14
     TP=(HIGH+LOW+CLOSE)/3
     MA=MA(TP,N)
@@ -16,16 +14,16 @@ def signal(*args):
     CCI can be used to reflect overbought and oversold market conditions.
     Generally, CCI above 100 indicates the market is overbought; CCI below -100 indicates the market is oversold.
     When CCI crosses below 100 / crosses above -100, it suggests the price may begin to reverse, and one may consider selling/buying.
-    '''
+    """
 
-    df['tp'] = (df['high'] + df['low'] + df['close']) / 3
-    df['ma'] = df['tp'].rolling(window=n, min_periods=1).mean()
-    df['md'] = abs(df['tp'] - df['ma']).rolling(window=n, min_periods=1).mean()
+    df = df.with_columns(pl.Series("tp", (df["high"] + df["low"] + df["close"]) / 3))
+    df = df.with_columns(pl.Series("ma", df["tp"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("md", abs(df["tp"] - df["ma"]).rolling_mean(n, min_samples=config.min_periods)))
 
-    df[factor_name] = (df['tp'] - df['ma']) / (df['md'] * 0.015 + eps)
+    df = df.with_columns(pl.Series(factor_name, (df["tp"] - df["ma"]) / (df["md"] * 0.015 + eps)))
 
-    del df['tp']
-    del df['ma']
-    del df['md']
+    df = df.drop("tp")
+    df = df.drop("ma")
+    df = df.drop("md")
 
     return df

@@ -1,4 +1,7 @@
-def signal(*args):
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # HLMA indicator
     """
     N1=20
@@ -8,19 +11,15 @@ def signal(*args):
     The HLMA indicator replaces the close price in the ordinary moving average with the high and low prices
     to get HMA and LMA respectively. A buy/sell signal is generated when the close price crosses above HMA / crosses below LMA.
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
-    hma = df['high'].rolling(n, min_periods=1).mean()
-    lma = df['low'].rolling(n, min_periods=1).mean()
-    df['HLMA'] = hma - lma
-    df['HLMA_mean'] = df['HLMA'].rolling(n, min_periods=1).mean()
+    hma = df["high"].rolling_mean(n, min_samples=config.min_periods)
+    lma = df["low"].rolling_mean(n, min_samples=config.min_periods)
+    df = df.with_columns(pl.Series("HLMA", hma - lma))
+    df = df.with_columns(pl.Series("HLMA_mean", df["HLMA"].rolling_mean(n, min_samples=config.min_periods)))
 
     # normalize (remove units)
-    df[factor_name] = df['HLMA'] / df['HLMA_mean'] - 1
+    df = df.with_columns(pl.Series(factor_name, df["HLMA"] / df["HLMA_mean"] - 1))
 
-    del df['HLMA']
-    del df['HLMA_mean']
+    df = df.drop("HLMA")
+    df = df.drop("HLMA_mean")
 
     return df

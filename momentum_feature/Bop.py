@@ -1,8 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # BOP indicator
     """
     N=20
@@ -14,11 +13,11 @@ def signal(*args):
     the more the price has been pushed toward the high; the smaller the BOP, the more
     the price has been pushed toward the low. We can use BOP crossing above/below 0 to generate buy/sell signals.
     """
-    df['co'] = df['close'] - df['open']
-    df['hl'] = df['high'] - df['low']
-    df[factor_name] = (df['co'] / df['hl']).rolling(n, min_periods=1).mean()
+    df = df.with_columns(pl.Series("co", df["close"] - df["open"]))
+    df = df.with_columns(pl.Series("hl", df["high"] - df["low"]))
+    df = df.with_columns(pl.Series(factor_name, (df["co"] / df["hl"]).rolling_mean(n, min_samples=config.min_periods)))
 
-    del df['co']
-    del df['hl']
+    df = df.drop("co")
+    df = df.drop("hl")
 
     return df

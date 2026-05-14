@@ -1,16 +1,16 @@
-def signal(*args):
-    '''
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
+    """
     Build using hint as the B-selection factor
-    '''
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+    """
     # ==============================================================
 
-    df['mtm'] = df['high'] / df['high'].shift(n) - 1
-    df['mtm_mean'] = df['mtm'].rolling(window=n, min_periods=1).mean()
-    df['ma'] = df['close'].rolling(n, min_periods=1).mean()
-    df['cm'] = df['close'] / df['ma']
-    df[factor_name] = (df['mtm_mean'] - df['cm']) / df['cm']
+    df = df.with_columns(pl.Series("mtm", df["high"] / df["high"].shift(n) - 1))
+    df = df.with_columns(pl.Series("mtm_mean", df["mtm"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("ma", df["close"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("cm", df["close"] / df["ma"]))
+    df = df.with_columns(pl.Series(factor_name, (df["mtm_mean"] - df["cm"]) / df["cm"]))
 
     return df

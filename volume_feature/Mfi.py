@@ -1,12 +1,9 @@
 import numpy as np
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # Note: n should not exceed half the number of filtered K-lines when using this indicator (not half the K-line data fetched)
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
     """
     N=14
     TYPICAL_PRICE=(HIGH+LOW+CLOSE)/3
@@ -20,23 +17,20 @@ def signal(*args):
     If MFI crosses above 80, a buy signal is generated;
     if MFI crosses below 20, a sell signal is generated.
     """
-    df['price'] = (df['high'] + df['low'] + df['close']) / 3  # TYPICAL_PRICE=(HIGH+LOW+CLOSE)/3
-    df['MF'] = df['price'] * df['volume']  # MF=TYPICAL_PRICE*VOLUME
-    df['pos'] = np.where(df['price'] >= df['price'].shift(1), df['MF'],
-                         0)  # IF(TYPICAL_PRICE>=REF(TYPICAL_PRICE,1),MF,0)MF,0),N)
-    df['MF_POS'] = df['pos'].rolling(n).sum()
-    df['neg'] = np.where(df['price'] <= df['price'].shift(1), df['MF'],
-                         0)  # IF(TYPICAL_PRICE<=REF(TYPICAL_PRICE,1),MF,0)
-    df['MF_NEG'] = df['neg'].rolling(n).sum()  # MF_NEG=SUM(IF(TYPICAL_PRICE<=REF(TYPICAL_PRICE,1),MF,0),N)
+    # Numerical sensitivity note:
+    # MFI gates money flow by comparing typical price to its one-step lag. Tiny CSV / float
+    # differences around equality can change whether a row enters MF_POS or MF_NEG, so we round
+    # the typical price to stabilize pandas/polars comparison behaviour.
+    df = df.with_columns(pl.Series("price", ((df["high"] + df["low"] + df["close"]) / 3).round(12)))
+    df = df.with_columns(pl.Series("MF", df["price"] * df["volume"]))
+    df = df.with_columns(pl.Series("pos", np.where(df["price"] >= df["price"].shift(1), df["MF"], 0)).fill_nan(0))
+    df = df.with_columns(pl.Series("MF_POS", df["pos"].rolling_sum(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("neg", np.where(df["price"] <= df["price"].shift(1), df["MF"], 0)).fill_nan(0))
+    df = df.with_columns(pl.Series("MF_NEG", df["neg"].rolling_sum(n, min_samples=config.min_periods)))
 
-    df[factor_name] = 100 - 100 / (1 + df['MF_POS'] / df['MF_NEG'])  # MFI=100-100/(1+MF_POS/MF_NEG)
+    df = df.with_columns(pl.Series(factor_name, 100 - 100 / (1 + df["MF_POS"] / df["MF_NEG"])))
 
     # delete intermediate data
-    del df['price']
-    del df['MF']
-    del df['pos']
-    del df['MF_POS']
-    del df['neg']
-    del df['MF_NEG']
+    df = df.drop(["price", "MF", "pos", "MF_POS", "neg", "MF_NEG"])
 
     return df

@@ -1,12 +1,13 @@
-def signal(*args):
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # TradeNum indicator
     # Formula: result = SUM(trade_num, N)
-    # Rolling sum of the number of trades over N periods. A proxy for market activity and liquidity.
-    # Higher values indicate more transactions occurring, often associated with increased market interest.
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-    
-    df[factor_name] = df['trade_num'].rolling(n, min_periods=1).sum()
+    # Rolling sum of the number of trades over N periods.
+    if "trade_num" in df.columns:
+        df = df.with_columns(pl.Series(factor_name, df["trade_num"].rolling_sum(n, min_samples=config.min_periods)))
+    else:
+        df = df.with_columns(pl.Series(factor_name, [None] * len(df)))
 
     return df

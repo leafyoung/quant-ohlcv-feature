@@ -1,30 +1,31 @@
-eps = 1e-8
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # Bolling indicator (Bollinger Band breakout distance)
     # Formula: UPPER = MA(CLOSE,N) + 1*STD(CLOSE,N); LOWER = MA(CLOSE,N) - 1*STD(CLOSE,N)
     #          distance = CLOSE - UPPER if CLOSE > UPPER; CLOSE - LOWER if CLOSE < LOWER; else 0
     #          result = distance / STD
     # Measures how far the price has broken outside the Bollinger bands, normalized by std.
     # Positive values indicate breakout above upper band; negative values indicate breakdown below lower band.
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
+    eps = config.eps
     # calculate Bollinger upper and lower bands
-    df['std'] = df['close'].rolling(n, min_periods=1).std()
-    df['ma'] = df['close'].rolling(n, min_periods=1).mean()
-    df['upper'] = df['ma'] + 1.0 * df['std']
-    df['lower'] = df['ma'] - 1.0 * df['std']
-    df['distance'] = 0
-    condition_1 = df['close'] > df['upper']
-    condition_2 = df['close'] < df['lower']
-    df.loc[condition_1, 'distance'] = df['close'] - df['upper']
-    df.loc[condition_2, 'distance'] = df['close'] - df['lower']
-    df[factor_name] = df['distance'] / (df['std'] + eps)
+    df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof)))
+    df = df.with_columns(pl.Series("ma", df["close"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("upper", df["ma"] + 1.0 * df["std"]))
+    df = df.with_columns(pl.Series("lower", df["ma"] - 1.0 * df["std"]))
+    df = df.with_columns(pl.lit(0).alias("distance"))
+    condition_1 = df["close"] > df["upper"]
+    condition_2 = df["close"] < df["lower"]
+    df = df.with_columns(
+        pl.when(condition_1).then(df["close"] - df["upper"]).otherwise(pl.col("distance")).alias("distance")
+    )
+    df = df.with_columns(
+        pl.when(condition_2).then(df["close"] - df["lower"]).otherwise(pl.col("distance")).alias("distance")
+    )
+    df = df.with_columns(pl.Series(factor_name, df["distance"] / (df["std"] + eps)))
 
     # delete extra columns
-    del df['std'], df['ma'], df['upper'], df['lower']
+    df = df.drop(["std", "ma", "upper", "lower"])
 
     return df
