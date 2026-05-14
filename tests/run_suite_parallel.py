@@ -3,15 +3,11 @@
 Run every indicator across all tickers and periods using process-level parallelism.
 
 Usage:
-    python tests/run_suite_parallel.py
-    python tests/run_suite_parallel.py --lib pandas
-    python tests/run_suite_parallel.py --output results/x.csv
-    python tests/run_suite_parallel.py --workers 16
-    python tests/run_suite_parallel.py --resample-size 500 --resample-seed 42
-    python tests/run_suite_parallel.py --resample-fraction 0.5 --resample-seed 42
-
-Auto-detects whether this is the master branch (signal(*args)) or
-whether indicator_config.py exists in the project root.
+    python tests/run_suite_parallel.py --impl polars
+    python tests/run_suite_parallel.py --impl pandas
+    python tests/run_suite_parallel.py --impl polars --output results/x.csv
+    python tests/run_suite_parallel.py --impl pandas --workers 16
+    python tests/run_suite_parallel.py --impl polars --resample-fraction 0.5 --resample-seed 42
 
 Output CSV: one row per (ticker, indicator, period) with summary stats.
 """
@@ -19,25 +15,18 @@ Output CSV: one row per (ticker, indicator, period) with summary stats.
 from __future__ import annotations
 
 import csv as csv_mod
-import hashlib
 import importlib
 import json
 import multiprocessing
 import os
-import random
 import sys
 import time
-from typing import Any
 
 # ── CLI args ──────────────────────────────────────────────────
-force_lib = None
 output_path = None
 max_workers = min(32, os.cpu_count() or 1)
 
 args = sys.argv[1:]
-if "--lib" in args:
-    idx = args.index("--lib")
-    force_lib = args[idx + 1].lower()
 if "--output" in args:
     idx = args.index("--output")
     output_path = args[idx + 1]
@@ -55,8 +44,6 @@ if _impl_val not in ("polars", "pandas"):
     print(f"error: --impl must be polars or pandas, got {_impl_val!r}", file=sys.stderr)
     raise SystemExit(1)
 _impl_name = f"impl_{_impl_val}"
-if force_lib is None:
-    force_lib = _impl_val
 
 # ── paths ─────────────────────────────────────────────────────
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -65,85 +52,20 @@ for p in (PROJECT_ROOT, TEST_DIR):
     if p not in sys.path:
         sys.path.insert(0, p)
 
-# ── detect branch type ────────────────────────────────────────
-HAS_CONFIG = os.path.exists(os.path.join(PROJECT_ROOT, "indicator_config.py"))
-DEFAULT_RESAMPLE_METHOD = "subset_no_replacement_sorted"
-DEFAULT_RESAMPLE_SEED = 42
+# ── config imports ────────────────────────────────────────────
+from config import (  # noqa: E402
+    DATA_DIR,
+    INDICATOR_CONFIG,
+    PERIOD_LABELS,
+    PERIODS,
+    RESULTS_DIR,
+    TICKERS,
+    get_resample_row_positions,
+    parse_resample_cli,
+    snapshot,
+)
 
-
-def parse_resample_cli(argv: list[str]) -> dict[str, Any] | None:
-    """Parse deterministic resampling flags from CLI args."""
-    wants_resample = any(
-        flag in argv for flag in ("--resample", "--resample-size", "--resample-fraction", "--resample-seed")
-    )
-    if not wants_resample:
-        return None
-
-    method = DEFAULT_RESAMPLE_METHOD
-    if "--resample" in argv:
-        idx = argv.index("--resample")
-        method = argv[idx + 1].strip().lower()
-
-    if method != DEFAULT_RESAMPLE_METHOD:
-        raise ValueError(f"Unsupported --resample value: {method!r}. Supported: {DEFAULT_RESAMPLE_METHOD!r}.")
-
-    sample_size = None
-    if "--resample-size" in argv:
-        idx = argv.index("--resample-size")
-        sample_size = int(argv[idx + 1])
-
-    sample_fraction = None
-    if "--resample-fraction" in argv:
-        idx = argv.index("--resample-fraction")
-        sample_fraction = float(argv[idx + 1])
-
-    if sample_size is not None and sample_fraction is not None:
-        raise ValueError("Use either --resample-size or --resample-fraction, not both.")
-    if sample_size is None and sample_fraction is None:
-        raise ValueError("Resampling requires --resample-size or --resample-fraction.")
-    if sample_size is not None and sample_size <= 0:
-        raise ValueError("--resample-size must be a positive integer.")
-    if sample_fraction is not None and not (0 < sample_fraction <= 1):
-        raise ValueError("--resample-fraction must be in the interval (0, 1].")
-
-    seed = DEFAULT_RESAMPLE_SEED
-    if "--resample-seed" in argv:
-        idx = argv.index("--resample-seed")
-        seed = int(argv[idx + 1])
-
-    return {
-        "enabled": True,
-        "method": method,
-        "sample_size": sample_size,
-        "sample_fraction": sample_fraction,
-        "seed": seed,
-    }
-
-
-def resolve_resample_size(n_rows: int, resample_config: dict[str, Any]) -> int:
-    sample_size = resample_config.get("sample_size")
-    if sample_size is not None:
-        k = int(sample_size)
-    else:
-        sample_fraction = float(resample_config["sample_fraction"])
-        k = max(1, round(n_rows * sample_fraction))
-    if k > n_rows:
-        raise ValueError(f"Requested resample size {k} exceeds available rows {n_rows}.")
-    return k
-
-
-def get_resample_row_positions(n_rows: int, ticker: str, resample_config: dict[str, Any] | None) -> list[int] | None:
-    if not resample_config:
-        return None
-    k = resolve_resample_size(n_rows, resample_config)
-    payload = (
-        f"{resample_config['seed']}|{resample_config['method']}|{ticker}|{n_rows}|"
-        f"{resample_config['sample_size']}|{resample_config['sample_fraction']}"
-    )
-    derived_seed = int.from_bytes(hashlib.sha256(payload.encode("utf-8")).digest()[:8], "big")
-    rng = random.Random(derived_seed)
-    return sorted(rng.sample(range(n_rows), k))
-
+from indicator_config import ensure_columns, unwrap_configured  # noqa: E402
 
 try:
     RESAMPLE_CONFIG = parse_resample_cli(args)
@@ -151,87 +73,11 @@ except ValueError as exc:
     print(f"error: {exc}", file=sys.stderr)
     raise SystemExit(2) from exc
 
-if HAS_CONFIG:
-    from config import (  # type: ignore[no-redef]
-        DATA_DIR,
-        INDICATOR_CONFIG,
-        PERIOD_LABELS,
-        PERIODS,
-        RESULTS_DIR,
-        TICKERS,
-        snapshot,
-    )
-
-    from indicator_config import ensure_columns, unwrap_configured
-else:
-    DATA_DIR = "tests/data"
-    RESULTS_DIR = "tests/results"
-    TICKERS = ["AAPL", "MSFT", "GOOGL"]
-    PERIODS = [3, 5, 7, 10, 14, 20, 30, 45, 60, 120]
-    PERIOD_LABELS = {
-        3: "3d-micro",
-        5: "5d-week",
-        7: "7d-week+",
-        10: "10d-fortnight",
-        14: "14d-halfmonth",
-        20: "20d-month",
-        30: "30d-month+",
-        45: "45d-midquarter",
-        60: "60d-quarter",
-        120: "120d-halfyear",
-    }
-
-    def snapshot(resample_config=None):
-        return {"tickers": TICKERS, "periods": PERIODS, "resample": resample_config}
-
-
-# ── detect library ────────────────────────────────────────────
-if force_lib == "pandas":
-    import pandas as _pd
-
-    LIB, LIB_VERSION = "pandas", _pd.__version__
-elif force_lib == "polars":
-    import polars as _pl
-
-    LIB, LIB_VERSION = "polars", _pl.__version__
-else:
-    try:
-        import polars as _pl
-
-        LIB, LIB_VERSION = "polars", _pl.__version__
-    except ImportError:
-        import pandas as _pd
-
-        LIB, LIB_VERSION = "pandas", _pd.__version__
-
-if LIB == "polars":
-    import polars as pl
-
-    def load_csv(path):
-        return pl.read_csv(path)
-
-    def df_shape(df):
-        return df.shape
-
-    def df_clone(df):
-        return df.clone()
-
-    def df_take_rows(df, positions):
-        return df[positions]
-
-    def get_stats(df, col):
-        s = df[col]
-        s_clean = s.drop_nans().drop_nulls()
-        return {
-            "mean": float(s_clean.mean()) if len(s_clean) > 0 else float("nan"),
-            "std": float(s_clean.std()) if len(s_clean) > 1 else float("nan"),
-            "min": float(s_clean.min()) if len(s_clean) > 0 else float("nan"),
-            "max": float(s_clean.max()) if len(s_clean) > 0 else float("nan"),
-            "nan_count": int(s.null_count() + s.is_nan().sum()),
-            "nan_pct": round((s.null_count() + s.is_nan().sum()) / len(s) * 100, 2),
-        }
-else:
+# ── library detection (driven by --impl) ──────────────────────
+if _impl_val == "pandas":
     import pandas as pd
+
+    LIB, LIB_VERSION = "pandas", pd.__version__
 
     def load_csv(path):
         return pd.read_csv(path, index_col=0)
@@ -256,7 +102,37 @@ else:
             "nan_pct": round(s.isna().sum() / len(s) * 100, 2),
         }
 
+else:
+    import polars as pl
 
+    LIB, LIB_VERSION = "polars", pl.__version__
+
+    def load_csv(path):
+        return pl.read_csv(path)
+
+    def df_shape(df):
+        return df.shape
+
+    def df_clone(df):
+        return df.clone()
+
+    def df_take_rows(df, positions):
+        return df[positions]
+
+    def get_stats(df, col):
+        s = df[col]
+        s_clean = s.drop_nans().drop_nulls()
+        return {
+            "mean": float(s_clean.mean()) if len(s_clean) > 0 else float("nan"),
+            "std": float(s_clean.std()) if len(s_clean) > 1 else float("nan"),
+            "min": float(s_clean.min()) if len(s_clean) > 0 else float("nan"),
+            "max": float(s_clean.max()) if len(s_clean) > 0 else float("nan"),
+            "nan_count": int(s.null_count() + s.is_nan().sum()),
+            "nan_pct": round((s.null_count() + s.is_nan().sum()) / len(s) * 100, 2),
+        }
+
+
+# ── indicator discovery ───────────────────────────────────────
 FEATURE_SUBDIRS = [
     "momentum_feature",
     "trend_feature",
@@ -284,6 +160,29 @@ def discover_indicators():
     return indicators
 
 
+# ── worker ────────────────────────────────────────────────────
+def _make_error_record(ticker, ind_name, mod_name, n, error_msg):
+    """Build a standard error result row."""
+    return {
+        "ticker": ticker,
+        "indicator": ind_name,
+        "module": mod_name,
+        "period": n,
+        "period_label": PERIOD_LABELS.get(n, str(n)),
+        "factor_name": f"test_{ind_name}_{n}",
+        "status": "error",
+        "n_rows": "",
+        "runtime_ms": "",
+        "mean": "",
+        "std": "",
+        "min": "",
+        "max": "",
+        "nan_count": "",
+        "nan_pct": "",
+        "error": error_msg[:200],
+    }
+
+
 def run_one(task: dict) -> dict:
     """Run a single (ticker, indicator, period) combination."""
     ticker = task["ticker"]
@@ -294,24 +193,7 @@ def run_one(task: dict) -> dict:
 
     csv_path = os.path.join(DATA_DIR, f"{ticker}.csv")
     if not os.path.exists(csv_path):
-        return {
-            "ticker": ticker,
-            "indicator": ind_name,
-            "module": mod_name,
-            "period": n,
-            "period_label": PERIOD_LABELS.get(n, str(n)),
-            "factor_name": factor_name,
-            "status": "error",
-            "n_rows": "",
-            "runtime_ms": "",
-            "mean": "",
-            "std": "",
-            "min": "",
-            "max": "",
-            "nan_count": "",
-            "nan_pct": "",
-            "error": f"no data file: {csv_path}",
-        }
+        return _make_error_record(ticker, ind_name, mod_name, n, f"no data file: {csv_path}")
 
     try:
         base_df = load_csv(csv_path)
@@ -321,39 +203,16 @@ def run_one(task: dict) -> dict:
             base_df = df_take_rows(base_df, positions)
         df = df_clone(base_df)
 
-        if HAS_CONFIG:
-            df = ensure_columns(df, INDICATOR_CONFIG)
+        df = ensure_columns(df, INDICATOR_CONFIG)
 
         mod = importlib.import_module(mod_name)
         t0 = time.perf_counter()
-
-        if HAS_CONFIG:
-            result = mod.signal(df, n, factor_name, INDICATOR_CONFIG)
-            result = unwrap_configured(result)
-        else:
-            result = mod.signal(df, n, factor_name)
-
+        result = mod.signal(df, n, factor_name, INDICATOR_CONFIG)
+        result = unwrap_configured(result)
         runtime_ms = (time.perf_counter() - t0) * 1000
 
         if factor_name not in result.columns:
-            return {
-                "ticker": ticker,
-                "indicator": ind_name,
-                "module": mod_name,
-                "period": n,
-                "period_label": PERIOD_LABELS.get(n, str(n)),
-                "factor_name": factor_name,
-                "status": "error",
-                "n_rows": "",
-                "runtime_ms": "",
-                "mean": "",
-                "std": "",
-                "min": "",
-                "max": "",
-                "nan_count": "",
-                "nan_pct": "",
-                "error": f"column '{factor_name}' not in result",
-            }
+            return _make_error_record(ticker, ind_name, mod_name, n, f"column '{factor_name}' not in result")
 
         stats = get_stats(result, factor_name)
         return {
@@ -370,33 +229,17 @@ def run_one(task: dict) -> dict:
             "error": "",
         }
     except Exception as e:
-        return {
-            "ticker": ticker,
-            "indicator": ind_name,
-            "module": mod_name,
-            "period": n,
-            "period_label": PERIOD_LABELS.get(n, str(n)),
-            "factor_name": factor_name,
-            "status": "error",
-            "n_rows": "",
-            "runtime_ms": "",
-            "mean": "",
-            "std": "",
-            "min": "",
-            "max": "",
-            "nan_count": "",
-            "nan_pct": "",
-            "error": str(e)[:200],
-        }
+        return _make_error_record(ticker, ind_name, mod_name, n, str(e))
 
 
+# ── main ──────────────────────────────────────────────────────
 def main():
     global output_path
     os.makedirs(RESULTS_DIR, exist_ok=True)
 
     indicators = discover_indicators()
+    print(f"Impl:     {_impl_name}")
     print(f"Library:  {LIB} {LIB_VERSION}")
-    print(f"Branch:   {'config' if HAS_CONFIG else 'master'}")
     print(f"Tickers:  {TICKERS}")
     print(f"Periods:  {PERIODS}")
     print(f"Indicators: {len(indicators)}")
@@ -451,6 +294,7 @@ def main():
     run_meta = {
         "lib": LIB,
         "lib_version": LIB_VERSION,
+        "impl": _impl_name,
         "branch": branch,
         "commit": commit,
         "num_indicators": len(indicators),
