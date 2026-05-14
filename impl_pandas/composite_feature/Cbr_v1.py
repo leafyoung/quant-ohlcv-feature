@@ -28,6 +28,6 @@ def signal(df, n, factor_name, config):
 
     df[factor_name] = df["RC"] * df["bbw"] * df["corr"]
 
-    del df["RC"], df["median"], df["std"], df["bbw"], df["corr"]
+    df = df.drop(columns=["RC", "median", "std", "bbw", "corr"])
 
     return df

@@ -28,12 +28,6 @@ def signal(df, n, factor_name, config):
     df[factor_name] = df["close_ratio"] / (df["volume_ratio"] + config.eps) * df["direction"] * df["adj"]
     df[factor_name] = df[factor_name] / n  # normalize by window length
 
-    del df["close_shift"]
-    del df["volume_shift"]
-    del df["close_ratio"]
-    del df["volume_ratio"]
-    del df["angle"]
-    del df["direction"]
-    del df["adj"]
+    df = df.drop(columns=["close_shift", "volume_shift", "close_ratio", "volume_ratio", "angle", "direction", "adj"])
 
     return df

@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
         pl.Series(
             "volatility",
             df["taker_buy_quote_asset_volume"].rolling_sum(n, min_samples=config.min_periods)
-            / df["taker_buy_quote_asset_volume"].rolling_sum(int(0.5 * n), min_samples=config.min_periods),
+            / (df["taker_buy_quote_asset_volume"].rolling_sum(int(0.5 * n), min_samples=config.min_periods) + config.eps),
         )
     )
 

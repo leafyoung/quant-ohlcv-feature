@@ -14,7 +14,7 @@ def signal(df, n, factor_name, config):
     df["down"] = np.where(close_dif < 0, abs(close_dif), 0)
     a = df["up"].rolling(n, min_periods=config.min_periods).sum()
     b = df["down"].rolling(n, min_periods=config.min_periods).sum()
-    df["rsi"] = (a / (a + b)) * 100
+    df["rsi"] = (a / (a + b + config.eps)) * 100
     df["median"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
     df["bbw"] = (df["std"] / (df["median"] + config.eps)).diff(n)

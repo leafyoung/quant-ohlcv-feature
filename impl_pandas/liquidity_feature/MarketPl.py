@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
     # Positive values suggest the current price is above average holding cost (profitable for holders).
     quote_volume_ema = df["quote_volume"].ewm(span=n, adjust=config.ewm_adjust).mean()
     volume_ema = df["volume"].ewm(span=n, adjust=config.ewm_adjust).mean()
-    df["avg_holding_cost"] = quote_volume_ema / volume_ema
+    df["avg_holding_cost"] = quote_volume_ema / (volume_ema + config.eps)
     df[factor_name] = df["close"] / (df["avg_holding_cost"] + eps) - 1
 
     del df["avg_holding_cost"]

@@ -20,10 +20,10 @@ def signal(df, n, factor_name, config):
     # normalize shortest path
     df["path_shortest"] = df["path_min"] / df["close"]
 
-    df[factor_name] = np.where(df["path_shortest"] == 0, 0, df["quote_volume"] / df["path_shortest"])
+    df[factor_name] = df["quote_volume"] / (df["path_shortest"] + config.eps)
     df[factor_name] = df[factor_name].fillna(0)
     df[factor_name] = df[factor_name].rolling(n, min_periods=config.min_periods).sum()  # or mean
 
-    del df["path_first"], df["path_second"], df["path_min"], df["change"], df["path_shortest"]
+    df = df.drop(columns=["path_first", "path_second", "path_min", "change", "path_shortest"])
 
     return df

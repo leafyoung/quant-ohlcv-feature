@@ -23,7 +23,7 @@ def signal(df, n, factor_name, config):
     # taker_buy_quote_asset_volume volatility
     df["volatility"] = (
         df["taker_buy_quote_asset_volume"].rolling(window=n, min_periods=config.min_periods).sum()
-        / df["taker_buy_quote_asset_volume"].rolling(window=int(0.5 * n), min_periods=config.min_periods).sum()
+        / (df["taker_buy_quote_asset_volume"].rolling(window=int(0.5 * n), min_periods=config.min_periods).sum() + config.eps)
     )
 
     df[factor_name] = df["mtm"] * df["s_mtm"] * df["bbw_mean"] * df["volatility"]

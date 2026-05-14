@@ -15,7 +15,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("down", np.where(diff < 0, abs(diff), 0)).fill_nan(None))
     A = df["up"].rolling_sum(n, min_samples=config.min_periods)
     B = df["down"].rolling_sum(n, min_samples=config.min_periods)
-    df = df.with_columns(pl.Series("rsi", A / (A + B)))
+    df = df.with_columns(pl.Series("rsi", A / (A + B + config.eps)))
     df = df.with_columns(pl.Series("ema_rsi", df["rsi"].ewm_mean(span=n, adjust=config.ewm_adjust)))
     df = df.with_columns(pl.Series(factor_name, df["ema_rsi"].ewm_mean(span=n, adjust=config.ewm_adjust)))
 

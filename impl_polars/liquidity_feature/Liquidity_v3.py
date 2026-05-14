@@ -33,7 +33,7 @@ def signal(df, n, factor_name, config):
 
     df = df.with_columns(
         pl.Series(
-            "liq_raw", np.where(df["path_shortest"].fill_null(0) == 0, 0, df["quote_volume"] / df["path_shortest"])
+            "liq_raw", df["quote_volume"] / (df["path_shortest"] + config.eps)
         ).fill_nan(None)
     )
     # Fill remaining NaN in liq_raw (from null path_shortest at row 0) to match pandas NaN-skipping rolling_sum

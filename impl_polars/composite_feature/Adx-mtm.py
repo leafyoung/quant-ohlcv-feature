@@ -25,8 +25,8 @@ def signal(df, n, factor_name, config):
     )
     df = df.with_columns(pl.Series("NDM", df["XNDM"].rolling_sum(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("c1", abs(df["high"] - df["low"])))
-    df = df.with_columns(pl.Series("c2", abs(df["high"] - df["close"])))
-    df = df.with_columns(pl.Series("c3", abs(df["low"] - df["close"])))
+    df = df.with_columns(pl.Series("c2", abs(df["high"] - df["close"].shift(1))))
+    df = df.with_columns(pl.Series("c3", abs(df["low"] - df["close"].shift(1))))
     df = df.with_columns(TR=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
 
     df = df.with_columns(pl.Series("TR_sum", df["TR"].rolling_sum(n, min_samples=config.min_periods)))

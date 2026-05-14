@@ -9,7 +9,7 @@ def signal(df, n, factor_name, config):
     # BR > 100 suggests bullish sentiment; BR < 100 suggests bearish sentiment.
     v1 = (df["high"] - df["close"].shift(1)).rolling_sum(n, min_samples=config.min_periods)
     v2 = (df["close"].shift(1) - df["low"]).rolling_sum(n, min_samples=config.min_periods)
-    _br = 100 * v1 / v2
+    _br = 100 * v1 / (v2 + config.eps)
     df = df.with_columns(pl.Series(factor_name, _br))
 
     return df

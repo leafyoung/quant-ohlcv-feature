@@ -12,7 +12,7 @@ def signal(df, n, factor_name, config):
     # taker buy ratio
     volume = df["quote_volume"].rolling(n, min_periods=config.min_periods).sum()
     buy_volume = df["taker_buy_quote_asset_volume"].rolling(n, min_periods=config.min_periods).sum()
-    df["taker_by_ratio"] = buy_volume / volume
+    df["taker_by_ratio"] = buy_volume / (volume + config.eps)
 
     # volatility factor
     df["c1"] = df["high"] - df["low"]

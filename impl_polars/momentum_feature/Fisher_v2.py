@@ -23,7 +23,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("min_low", df["low"].rolling_min(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("max_high", df["high"].rolling_max(n, min_samples=config.min_periods)))
     df = df.with_columns(
-        pl.Series("price_ch", PARAM * 2 * ((df["price"] - df["min_low"]) / (df["max_high"] - df["min_low"]) - 0.5))
+        pl.Series("price_ch", PARAM * 2 * ((df["price"] - df["min_low"]) / (df["max_high"] - df["min_low"] + config.eps) - 0.5))
     )
     df = df.with_columns(pl.Series("price_change", df["price_ch"] + (1 - PARAM) * df["price_ch"].shift(1)))
     df = df.with_columns(

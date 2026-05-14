@@ -16,8 +16,8 @@ def signal(df, n, factor_name, config):
     df["PDM"] = df["XPDM"].rolling(n, min_periods=config.min_periods).sum()
 
     df["c1"] = abs(df["high"] - df["low"])
-    df["c2"] = abs(df["high"] - df["close"])
-    df["c3"] = abs(df["low"] - df["close"])
+    df["c2"] = abs(df["high"] - df["close"].shift(1))
+    df["c3"] = abs(df["low"] - df["close"].shift(1))
     df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)
 
     df["TR_sum"] = df["TR"].rolling(n, min_periods=config.min_periods).sum()

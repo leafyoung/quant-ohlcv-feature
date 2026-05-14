@@ -6,11 +6,11 @@ def signal(df, n, factor_name, config):
     # In uptrends, measures how far close has pulled back from the N-period high (deeper pullback → larger value).
     # In downtrends, measures the rebound height from the N-period low. Range: [-1, 1].
     # only observe pullback magnitude during uptrends
-    df["scores_high"] = (1 - df["close"] / df["high"].rolling(window=n, min_periods=config.min_periods).max()).where(
+    df["scores_high"] = (1 - df["close"] / (df["high"].rolling(window=n, min_periods=config.min_periods).max() + config.eps)).where(
         df["close"] - df["open"].shift(n) > 0
     )
     # only observe rebound magnitude during downtrends
-    df["scores_low"] = (1 - df["close"] / df["low"].rolling(window=n, min_periods=config.min_periods).min()).where(
+    df["scores_low"] = (1 - df["close"] / (df["low"].rolling(window=n, min_periods=config.min_periods).min() + config.eps)).where(
         df["close"] - df["open"].shift(n) < 0
     )
     df[factor_name] = df["scores_high"].fillna(0) + df["scores_low"].fillna(0)  # [-1, 1]

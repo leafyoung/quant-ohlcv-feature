@@ -18,7 +18,7 @@ def signal(df, n, factor_name, config):
 
     df = df.with_columns(
         pl.Series(
-            factor_name, df["Bias_DIF"].rolling_mean(3 * n + 2, min_samples=config.min_periods) * (buy_volume / volume)
+            factor_name, df["Bias_DIF"].rolling_mean(3 * n + 2, min_samples=config.min_periods) * (buy_volume / (volume + config.eps))
         )
     )
 

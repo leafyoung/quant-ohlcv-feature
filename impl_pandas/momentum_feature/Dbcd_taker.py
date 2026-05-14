@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     volume = df["quote_volume"].rolling(n, min_periods=config.min_periods).sum()
     buy_volume = df["taker_buy_quote_asset_volume"].rolling(n, min_periods=config.min_periods).sum()
 
-    df[factor_name] = df["Bias_DIF"].rolling(3 * n + 2, min_periods=config.min_periods).mean() * (buy_volume / volume)
+    df[factor_name] = df["Bias_DIF"].rolling(3 * n + 2, min_periods=config.min_periods).mean() * (buy_volume / (volume + config.eps))
 
     del df["ma"]
     del df["Bias"]

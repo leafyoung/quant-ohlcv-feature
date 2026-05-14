@@ -9,7 +9,7 @@ def signal(df, n, factor_name, config):
     #          result = ROLLING_CORR(RETURN, RETURN.shift(1), N)
     # Measures the persistence of returns over the past N periods.
     # Positive values indicate momentum (trending), negative values indicate mean-reversion.
-    df = df.with_columns(pl.Series("_return", df["close"].pct_change()))
+    df = df.with_columns(pl.Series("_return", df["close"] / (df["close"].shift(1) + config.eps) - 1))
     df = df.with_columns(pl.Series("_return_lag1", df["_return"].shift(1)))
 
     df = df.with_columns(pl.Series(factor_name, rolling_corr_np(df["_return"], df["_return_lag1"], n, 2, config)))

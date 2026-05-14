@@ -14,6 +14,6 @@ def signal(df, n, factor_name, config):
     tp = (high_ma + low_ma + close_ma) / 3
     ma = tp.rolling(n, min_periods=config.min_periods).mean()
     md = abs(ma - close_ma).rolling(n, min_periods=config.min_periods).mean()
-    df[factor_name] = (tp - ma) / md / 0.015
+    df[factor_name] = (tp - ma) / (md + config.eps) / 0.015
 
     return df
