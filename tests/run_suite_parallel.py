@@ -45,6 +45,19 @@ if "--workers" in args:
     idx = args.index("--workers")
     max_workers = int(args[idx + 1])
 
+# --impl is mandatory: selects which implementation directory to test
+if "--impl" not in args:
+    print("error: --impl is required (polars or pandas)", file=sys.stderr)
+    raise SystemExit(1)
+_impl_idx = args.index("--impl")
+_impl_val = args[_impl_idx + 1].strip().lower()
+if _impl_val not in ("polars", "pandas"):
+    print(f"error: --impl must be polars or pandas, got {_impl_val!r}", file=sys.stderr)
+    raise SystemExit(1)
+_impl_name = f"impl_{_impl_val}"
+if force_lib is None:
+    force_lib = _impl_val
+
 # ── paths ─────────────────────────────────────────────────────
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 PROJECT_ROOT = os.path.dirname(TEST_DIR)
@@ -244,7 +257,7 @@ else:
         }
 
 
-FEATURE_DIRS = [
+FEATURE_SUBDIRS = [
     "momentum_feature",
     "trend_feature",
     "volatility_feature",
@@ -254,14 +267,18 @@ FEATURE_DIRS = [
     "composite_feature",
 ]
 
+FEATURE_DIRS = [f"{_impl_name}.{sub}" for sub in FEATURE_SUBDIRS]
+
 
 def discover_indicators():
     """Return sorted list of module names for all indicators."""
     indicators = []
     for d in FEATURE_DIRS:
-        if not os.path.isdir(os.path.join(PROJECT_ROOT, d)):
+        fs_path = d.replace(".", os.sep)
+        abs_path = os.path.join(PROJECT_ROOT, fs_path)
+        if not os.path.isdir(abs_path):
             continue
-        for f in sorted(os.listdir(os.path.join(PROJECT_ROOT, d))):
+        for f in sorted(os.listdir(abs_path)):
             if f.endswith(".py") and f != "__init__.py":
                 indicators.append(f"{d}.{f[:-3]}")
     return indicators
