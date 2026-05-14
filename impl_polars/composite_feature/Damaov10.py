@@ -16,8 +16,8 @@ def signal(df, n, factor_name, config):
             "RC",
             100
             * (
-                (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
-                + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+                (df["close"] - df["close"].shift(n)) / (df["close"].shift(n) + config.eps)
+                + (df["close"] - df["close"].shift(2 * n)) / (df["close"].shift(2 * n) + config.eps)
             ),
         )
     )
@@ -25,7 +25,7 @@ def signal(df, n, factor_name, config):
     # BBW
     df = df.with_columns(pl.Series("median", df["close"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, ddof=config.ddof, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("z_score", (df["close"] - df["median"]).abs() / df["std"]))
+    df = df.with_columns(pl.Series("z_score", (df["close"] - df["median"]).abs() / (df["std"] + config.eps)))
     df = df.with_columns(pl.Series("m", df["z_score"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("BBW", df["std"] * df["m"] * 2 / (df["median"] + eps)))
     df = df.with_columns(pl.Series("BBW_mean", df["BBW"].rolling_mean(n, min_samples=config.min_periods)))
@@ -36,7 +36,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(TR=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
     df = df.with_columns(pl.Series("_ATR", df["TR"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize ATR indicator
-    df = df.with_columns(pl.Series("ATR", df["_ATR"] / df["median"]))
+    df = df.with_columns(pl.Series("ATR", df["_ATR"] / (df["median"] + config.eps)))
 
     df = df.with_columns(pl.Series(factor_name, df["RC_mean"] * df["BBW_mean"] * df["ATR"]))
     # delete extra columns

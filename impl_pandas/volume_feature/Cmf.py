@@ -12,7 +12,7 @@ def signal(df, n, factor_name, config):
     A = ((df["close"] - df["low"]) - (df["high"] - df["close"])) * df["volume"] / (df["high"] - df["low"])
     df[factor_name] = (
         A.rolling(n, min_periods=config.min_periods).sum()
-        / df["volume"].rolling(n, min_periods=config.min_periods).sum()
+        / (df["volume"].rolling(n, min_periods=config.min_periods).sum() + config.eps)
     )
 
     return df

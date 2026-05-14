@@ -10,7 +10,7 @@ def signal(df, n, factor_name, config):
     # Positive values indicate right-skewed returns (more upside variance); negative indicate left-skewed.
     eps = config.eps
     # calculate returns
-    df = df.with_columns(pl.Series("return", df["close"] / df["close"].shift(1) - 1))
+    df = df.with_columns(pl.Series("return", df["close"] / (df["close"].shift(1) + config.eps) - 1))
 
     # calculate RV
     df = df.with_columns(pl.Series("pow_return", pow(df["return"], 2)))

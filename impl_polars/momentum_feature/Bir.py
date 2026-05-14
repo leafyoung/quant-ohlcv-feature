@@ -20,7 +20,7 @@ def signal(df, n, factor_name, config):
         ).fill_nan(None)
     )
     df = df.with_columns(
-        pl.Series("up", (df["up"] - df["p_max"].shift(short_period)) / df["p_max"].shift(short_period))
+        pl.Series("up", (df["up"] - df["p_max"].shift(short_period)) / (df["p_max"].shift(short_period) + config.eps))
     )
     df = df.with_columns(
         pl.Series(
@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
         ).fill_nan(None)
     )
     df = df.with_columns(
-        pl.Series("down", (df["down"] - df["p_min"].shift(short_period)) / df["p_min"].shift(short_period))
+        pl.Series("down", (df["down"] - df["p_min"].shift(short_period)) / (df["p_min"].shift(short_period) + config.eps))
     )
     df = df.with_columns(
         pl.Series(factor_name, (df["up"] + df["down"]).rolling_mean(short_period, min_samples=config.min_periods))

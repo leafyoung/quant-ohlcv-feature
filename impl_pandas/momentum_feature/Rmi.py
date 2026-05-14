@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     df["abs_close"] = df["close"] - df["close"].shift(1)
     df["sma_1"] = df["max_close"].rolling(n, min_periods=config.min_periods).mean()
     df["sma_2"] = df["abs_close"].rolling(n, min_periods=config.min_periods).mean()
-    df[factor_name] = df["sma_1"] / df["sma_2"] * 100
+    df[factor_name] = df["sma_1"] / (df["sma_2"] + config.eps) * 100
 
     del df["max_close"]
     del df["abs_close"]

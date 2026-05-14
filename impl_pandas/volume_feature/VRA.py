@@ -7,10 +7,10 @@ def signal(df, n, factor_name, config):
     # Higher values suggest strong trending momentum accompanied by elevated volatility.
     df["n_day_avg_price"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["n_day_std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-    df["n_day_volatility"] = df["n_day_std"] / df["n_day_avg_price"] * 100
+    df["n_day_volatility"] = df["n_day_std"] / (df["n_day_avg_price"] + config.eps) * 100
     # calculate upper and lower bands
     df["RC"] = 100 * (
-        (df["high"] - df["high"].shift(n)) / df["close"].shift(n)
+        (df["high"] - df["high"].shift(n)) / (df["close"].shift(n) + config.eps)
         + (df["close"] - df["close"].shift(2 * n)) / df["low"].shift(2 * n)
     )
     df["RC_mean"] = df["RC"].rolling(n, min_periods=config.min_periods).mean()

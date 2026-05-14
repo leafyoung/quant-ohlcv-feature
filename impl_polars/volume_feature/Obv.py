@@ -19,7 +19,7 @@ def signal(df, n, factor_name, config):
     # ref = ma.shift(n)  # MADisplaced=REF(MA_CLOSE,M)
 
     df = df.with_columns(
-        pl.Series(factor_name, df["_obv"] / df["_obv"].rolling_mean(n, min_samples=config.min_periods))
+        pl.Series(factor_name, df["_obv"] / (df["_obv"].rolling_mean(n, min_samples=config.min_periods) + config.eps))
     )  # normalize
 
     df = df.drop("_va")

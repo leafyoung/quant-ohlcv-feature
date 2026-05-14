@@ -9,7 +9,7 @@ def signal(df, n, factor_name, config):
     eps = config.eps
     df["median"] = df["close"].rolling(window=n, min_periods=config.min_periods).mean()
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-    df["z_score"] = abs(df["close"] - df["median"]) / df["std"]
+    df["z_score"] = abs(df["close"] - df["median"]) / (df["std"] + config.eps)
     df["m"] = df["z_score"].rolling(window=n, min_periods=config.min_periods).mean()
     df["upper"] = df["median"] + df["std"] * df["m"]
     df["lower"] = df["median"] - df["std"] * df["m"]

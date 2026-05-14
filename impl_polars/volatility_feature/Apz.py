@@ -23,7 +23,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("ema_close", df["close"].ewm_mean(span=2 * n, adjust=config.ewm_adjust)))
     df = df.with_columns(pl.Series("ema_ema_close", df["ema_close"].ewm_mean(span=2 * n, adjust=config.ewm_adjust)))
     # normalize using EMA
-    df = df.with_columns(pl.Series(factor_name, df["vol"] / df["ema_ema_close"]))
+    df = df.with_columns(pl.Series(factor_name, df["vol"] / (df["ema_ema_close"] + config.eps)))
 
     df = df.drop("hl")
     df = df.drop("ema_hl")

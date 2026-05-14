@@ -8,13 +8,13 @@ def signal(df, n, factor_name, config):
     #          result = MTM_MEAN * VOL_CHG_MEAN
     # Resonance between price momentum and relative volume activity.
     # High values indicate sustained price momentum coinciding with above-average trading volume.
-    df = df.with_columns(pl.Series("mtm", df["close"] / df["close"].shift(n) - 1))
+    df = df.with_columns(pl.Series("mtm", df["close"] / (df["close"].shift(n) + config.eps) - 1))
     df = df.with_columns(pl.Series("mtm_mean", df["mtm"].rolling_mean(n, min_samples=config.min_periods)))
 
     df = df.with_columns(
         pl.Series("quote_volume_mean", df["quote_volume"].rolling_mean(n, min_samples=config.min_periods))
     )
-    df = df.with_columns(pl.Series("quote_volume_change", (df["quote_volume"] / df["quote_volume_mean"])))
+    df = df.with_columns(pl.Series("quote_volume_change", (df["quote_volume"] / (df["quote_volume_mean"] + config.eps))))
     df = df.with_columns(
         pl.Series("quote_volume_change_mean", df["quote_volume_change"].rolling_mean(n, min_samples=config.min_periods))
     )

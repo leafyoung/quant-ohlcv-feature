@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     df["OL"] = df["open"] - df["low"]
     df[factor_name] = (
         df["HO"].rolling(n, min_periods=config.min_periods).sum()
-        / df["OL"].rolling(n, min_periods=config.min_periods).sum()
+        / (df["OL"].rolling(n, min_periods=config.min_periods).sum() + config.eps)
         * 100
     )
 

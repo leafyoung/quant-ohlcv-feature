@@ -13,6 +13,6 @@ def signal(df, n, factor_name, config):
     df["Vao_v2"] = df["VAO_MA1"] - df["VAO_MA2"]
 
     # normalize
-    df[factor_name] = df["VAO"] / df["Vao_v2"] - 1
+    df[factor_name] = df["VAO"] / (df["Vao_v2"] + config.eps) - 1
 
     return df

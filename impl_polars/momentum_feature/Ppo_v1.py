@@ -12,7 +12,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("ema_1", df["close"].ewm_mean(span=N1, adjust=config.ewm_adjust)))
     df = df.with_columns(pl.Series("ema_2", df["close"].ewm_mean(span=N2, adjust=config.ewm_adjust)))
     df = df.with_columns(
-        pl.Series("PPO", (df["ema_1"] / df["ema_1"].shift(N1) - 1) * (df["ema_2"] / df["ema_2"].shift(N2) - 1).abs())
+        pl.Series("PPO", (df["ema_1"] / (df["ema_1"].shift(N1) + config.eps) - 1) * (df["ema_2"] / (df["ema_2"].shift(N2) + config.eps) - 1).abs())
     )
 
     df = df.with_columns(pl.Series(factor_name, df["PPO"].ewm_mean(span=N1, adjust=config.ewm_adjust)))

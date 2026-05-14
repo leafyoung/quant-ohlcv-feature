@@ -8,9 +8,9 @@ def signal(df, n, factor_name, config):
     df["ma"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["ma2"] = df["close"].rolling(int(n / 2), min_periods=config.min_periods).mean()
     df["mtm"] = (
-        (df["ma2"] / df["ma"] - 1)
+        (df["ma2"] / (df["ma"] + config.eps) - 1)
         * df["quote_volume"]
-        / df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
+        / (df["quote_volume"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
     )
     df[factor_name] = df["mtm"].rolling(n, min_periods=config.min_periods).mean()
 

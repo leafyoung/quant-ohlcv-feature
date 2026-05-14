@@ -6,9 +6,9 @@ def signal(df, n, factor_name, config):
     # EMA smoothing reduces noise. High positive values indicate volume-backed upside momentum.
     df["ma"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["mtm"] = (
-        (df["close"] / df["ma"] - 1)
+        (df["close"] / (df["ma"] + config.eps) - 1)
         * df["quote_volume"]
-        / df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
+        / (df["quote_volume"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
     )
     # EMA
     df[factor_name] = df["mtm"].ewm(span=n, adjust=config.ewm_adjust).mean()

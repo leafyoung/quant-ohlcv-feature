@@ -14,7 +14,7 @@ def signal(df, n, factor_name, config):
     df["CL"] = df["close"].shift(1) - df["low"]
     df[factor_name] = (
         df["HC"].rolling(n, min_periods=config.min_periods).sum()
-        / df["CL"].rolling(n, min_periods=config.min_periods).sum()
+        / (df["CL"].rolling(n, min_periods=config.min_periods).sum() + config.eps)
         * 100
     )
 

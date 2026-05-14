@@ -8,9 +8,9 @@ def signal(df, n, factor_name, config):
     # df['tr_trix'] = df['close'].ewm(span=n, adjust=config.ewm_adjust).mean()
     # df['tr_pct'] = df['tr_trix'].pct_change()
     # average taker buy ratio
-    df["MtmMean"] = (df["close"] / df["close"].shift(n) - 1).ewm(span=n, adjust=config.ewm_adjust).mean()
+    df["MtmMean"] = (df["close"] / (df["close"].shift(n) + config.eps) - 1).ewm(span=n, adjust=config.ewm_adjust).mean()
     df["vma"] = df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
-    df["taker_buy_ma"] = (df["taker_buy_quote_asset_volume"] / df["vma"]) * 100
+    df["taker_buy_ma"] = (df["taker_buy_quote_asset_volume"] / (df["vma"] + config.eps)) * 100
     df["taker_buy_mean"] = df["taker_buy_ma"].rolling(window=n, min_periods=config.min_periods).mean()
 
     df[factor_name] = df["MtmMean"] * df["taker_buy_mean"]

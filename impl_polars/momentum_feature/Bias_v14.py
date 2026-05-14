@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(
         pl.Series(
             "mtm",
-            (df["ma2"] / df["ma"] - 1)
+            (df["ma2"] / (df["ma"] + config.eps) - 1)
             * df["quote_volume"]
             / df["quote_volume"].rolling_mean(n, min_samples=config.min_periods),
         )

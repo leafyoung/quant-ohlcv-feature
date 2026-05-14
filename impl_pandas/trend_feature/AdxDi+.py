@@ -42,7 +42,7 @@ def signal(df, n, factor_name, config):
     # TR=SUM(TR,N1)
     df["TR_sum"] = df["TR"].rolling(n, min_periods=config.min_periods).sum()
     # DI+=PDM/TR
-    df[factor_name] = df["PDM"] / df["TR"]  # DI+
+    df[factor_name] = df["PDM"] / (df["TR"] + config.eps)  # DI+
     # DI-=NDM/TR
     # df['DI-'] = df['NDM'] / df['TR'] #DI-
 

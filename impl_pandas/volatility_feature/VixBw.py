@@ -8,10 +8,10 @@ def signal(df, n, factor_name, config):
     #          zeroed when short-term trend direction conflicts with long-term trend direction
     # Measures the adaptive bandwidth of a VIX-like return measure, signed by its trend direction.
     # Positive values indicate widening volatility in an uptrend; negative in a downtrend.
-    df["vix"] = df["close"] / df["close"].shift(n) - 1
+    df["vix"] = df["close"] / (df["close"].shift(n) + config.eps) - 1
     df["vix_median"] = df["vix"].rolling(window=n, min_periods=config.min_periods).mean()
     df["vix_std"] = df["vix"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-    df["vix_score"] = abs(df["vix"] - df["vix_median"]) / df["vix_std"]
+    df["vix_score"] = abs(df["vix"] - df["vix_median"]) / (df["vix_std"] + config.eps)
     df["max"] = df["vix_score"].rolling(window=n, min_periods=config.min_periods).mean().shift(1)
     df["min"] = df["vix_score"].rolling(window=n, min_periods=config.min_periods).min().shift(1)
     df["vix_upper"] = df["vix_median"] + df["max"] * df["vix_std"]

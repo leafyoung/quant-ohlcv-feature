@@ -21,7 +21,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("ATR", df["TR"].rolling_mean(n, min_samples=config.min_periods)))
     # df[factor_name] = (df['high'] - df['low'].shift(1)) / (df['ATR'] * np.sqrt(n))
     df = df.with_columns(pl.Series(factor_name, (df["high"].shift(1) - df["low"]) / (df["ATR"] * np.sqrt(n))))
-    # df['Rwi'] = (df['close'] - df['RwiL']) / (1e-9 + df['RwiH'] - df['RwiL'])
+    # df['Rwi'] = (df['close'] - df['RwiL']) / (config.eps + df['RwiH'] - df['RwiL'])
     # df[f'RwiH_bh_{n}'] = df['RwiH'].shift(1)
     # df[f'RwiL_bh_{n}'] = df['RwiL'].shift(1)
     # df[f'Rwi_bh_{n}'] = df['Rwi'].shift(1)

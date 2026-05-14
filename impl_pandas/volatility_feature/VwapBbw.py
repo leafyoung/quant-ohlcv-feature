@@ -17,10 +17,10 @@ def signal(df, n, factor_name, config):
     bbw_chg = bbw.pct_change(n)
 
     df["quote_volume_normalized"] = (
-        df["quote_volume"] / df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
+        df["quote_volume"] / (df["quote_volume"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
     )
 
-    feature = (vwap_chg * bbw_chg) / df["quote_volume_normalized"]
+    feature = (vwap_chg * bbw_chg) / (df["quote_volume_normalized"] + config.eps)
     df[factor_name] = feature.rolling(n, min_periods=config.min_periods).sum()
 
     del df["quote_volume_normalized"]

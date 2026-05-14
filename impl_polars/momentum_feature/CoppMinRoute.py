@@ -20,7 +20,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(min_route=pl.min_horizontal([pl.col("route_1"), pl.col("route_2")]) / df["open"])
 
     df = df.with_columns(
-        pl.Series("RC", 100 * (df["close"] / df["close"].shift(n) - 1 + df["close"] / df["close"].shift(2 * n) - 1))
+        pl.Series("RC", 100 * (df["close"] / (df["close"].shift(n) + config.eps) - 1 + df["close"] / (df["close"].shift(2 * n) + config.eps) - 1))
     )
     df = df.with_columns(pl.Series("RC", df["RC"].ewm_mean(span=n, adjust=config.ewm_adjust)))
     df = df.with_columns(pl.Series("min_route", df["min_route"].ewm_mean(span=n, adjust=config.ewm_adjust)))

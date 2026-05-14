@@ -21,7 +21,7 @@ def signal(df, n, factor_name, config):
     a *= 1e3
     b *= 1e3
 
-    rsi = a / (config.normalize_eps + a + b)
+    rsi = a / (config.eps + a + b)
 
     rsi_middle = rsi.rolling(n, min_periods=config.min_periods).mean()
     # rsi_upper = rsi_middle + 2 * rsi.rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)

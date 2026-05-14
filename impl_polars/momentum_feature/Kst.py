@@ -26,7 +26,7 @@ def signal(df, n, factor_name, config):
     )
     df = df.with_columns(pl.Series("KST", df["KST_IND"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize
-    df = df.with_columns(pl.Series(factor_name, df["KST_IND"] / df["KST"]))
+    df = df.with_columns(pl.Series(factor_name, df["KST_IND"] / (df["KST"] + config.eps)))
 
     df = df.drop("ROC1")
     df = df.drop("ROC_MA1")

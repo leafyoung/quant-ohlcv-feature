@@ -9,9 +9,9 @@ def signal(df, n, factor_name, config):
     df["vol"] = df["pc"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
     df["ret"] = df["pc"].rolling(n, min_periods=config.min_periods).sum()
     df["cvr"] = (df["ret"] / (df["vol"] + eps)) * (
-        df["quote_volume"] / df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
+        df["quote_volume"] / (df["quote_volume"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
     )
     df[factor_name] = df["cvr"].rolling(n, min_periods=config.min_periods).mean()
-    df.drop(columns=["pc", "vol", "ret", "cvr"], inplace=True)
+    df = df.drop(columns=["pc", "vol", "ret", "cvr"])
 
     return df

@@ -18,7 +18,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("abs_close", df["close"] - df["close"].shift(1)))
     df = df.with_columns(pl.Series("sma_1", df["max_close"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("sma_2", df["abs_close"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series(factor_name, df["sma_1"] / df["sma_2"] * 100))
+    df = df.with_columns(pl.Series(factor_name, df["sma_1"] / (df["sma_2"] + config.eps) * 100))
 
     df = df.drop("max_close")
     df = df.drop("abs_close")

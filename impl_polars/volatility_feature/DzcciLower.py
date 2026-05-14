@@ -11,7 +11,7 @@ def signal(df, n, factor_name, config):
     tp = (df["high"] + df["low"] + df["close"]) / 3.0
     _ma = tp.rolling_mean(n, min_samples=config.min_periods)
     md = (tp - _ma).abs().rolling_mean(n, min_samples=config.min_periods)
-    _cci = (tp - _ma) / (config.normalize_eps + 0.015 * md)
+    _cci = (tp - _ma) / (config.eps + 0.015 * md)
     cci_middle = pl.Series(_cci).rolling_mean(n, min_samples=config.min_periods)
     cci_lower = cci_middle - 2 * pl.Series(_cci).rolling_std(n, min_samples=config.min_periods, ddof=config.ddof)
     cci_ma = pl.Series(_cci).rolling_mean(max(1, int(n / 4)), min_samples=config.min_periods)

@@ -6,11 +6,11 @@ def signal(df, n, factor_name, config):
     Dd2here aims to construct a breakout-drawdown system, blacklisting for n hours when maximum drawdown exceeds a threshold
     """
     df = df.with_columns(pl.Series("max2here", df["high"].rolling_max(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("dd1here", abs(df["close"] / df["max2here"] - 1)))
+    df = df.with_columns(pl.Series("dd1here", abs(df["close"] / (df["max2here"] + config.eps) - 1)))
     # df['avg_max_drawdown'] = df['dd1here'].rolling_mean(n, min_samples=config.min_periods)
 
     df = df.with_columns(pl.Series("min2here", df["low"].rolling_min(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("dd2here", abs(df["close"] / df["min2here"] - 1)))
+    df = df.with_columns(pl.Series("dd2here", abs(df["close"] / (df["min2here"] + config.eps) - 1)))
     # df['avg_reverse_drawdown'] = df['dd2here'].rolling_mean(n, min_samples=config.min_periods)
 
     df = df.with_columns(

@@ -34,7 +34,7 @@ def signal(df, n, factor_name, config):
     stm = pl.Series(dtm).rolling_sum(n, min_samples=config.min_periods)
     sbm = pl.Series(dbm).rolling_sum(n, min_samples=config.min_periods)
 
-    signal = (stm - sbm) / (config.normalize_eps + np.maximum(stm, sbm))
+    signal = (stm - sbm) / (config.eps + np.maximum(stm, sbm))
     signal = df["close"] - signal
     df = df.with_columns(pl.Series(factor_name, scale_01(signal, n, config.normalize_eps, config=config)))
 

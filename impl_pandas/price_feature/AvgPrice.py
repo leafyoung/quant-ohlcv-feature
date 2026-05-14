@@ -7,7 +7,7 @@ def signal(df, n, factor_name, config):
     eps = config.eps
     df["price"] = (
         df["quote_volume"].rolling(n, min_periods=config.min_periods).sum()
-        / df["volume"].rolling(n, min_periods=config.min_periods).sum()
+        / (df["volume"].rolling(n, min_periods=config.min_periods).sum() + config.eps)
     )
     df[factor_name] = (df["price"] - df["price"].rolling(n, min_periods=config.min_periods).min()) / (
         df["price"].rolling(n, min_periods=config.min_periods).max()

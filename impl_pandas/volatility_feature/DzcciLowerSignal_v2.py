@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     tp = df[["high", "low", "close"]].sum(axis=1) / 3.0
     ma = tp.rolling(n, min_periods=config.min_periods).mean()
     md = (tp - ma).abs().rolling(n, min_periods=config.min_periods).mean()
-    cci = (tp - ma) / (config.normalize_eps + 0.015 * md)
+    cci = (tp - ma) / (config.eps + 0.015 * md)
     cci_middle = pd.Series(cci).rolling(n, min_periods=config.min_periods).mean()
     cci_lower = cci_middle - 2 * pd.Series(cci).rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
     cci_ma = pd.Series(cci).rolling(max(1, int(n / 4)), min_periods=config.min_periods).mean()

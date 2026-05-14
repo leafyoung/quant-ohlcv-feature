@@ -11,7 +11,7 @@ def signal(df, n, factor_name, config):
     """
     df = df.with_columns(pl.Series("low_ma", df["low"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize
-    df = df.with_columns(pl.Series(factor_name, df["low"] / df["low_ma"] - 1))
+    df = df.with_columns(pl.Series(factor_name, df["low"] / (df["low_ma"] + config.eps) - 1))
 
     df = df.drop("low_ma")
 

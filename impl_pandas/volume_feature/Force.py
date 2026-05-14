@@ -5,7 +5,7 @@ def signal(df, n, factor_name, config):
     # Values > 1 indicate current force is above its N-period average (strong momentum); < 1 below average.
     # Note: n should not exceed half the number of filtered K-lines when using this indicator (not half the K-line data fetched)
     df["force"] = df["quote_volume"] * (df["close"] - df["close"].shift(1))
-    df[factor_name] = df["force"] / df["force"].rolling(n, min_periods=config.min_periods).mean()
+    df[factor_name] = df["force"] / (df["force"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
 
     # ref = ma.shift(n)  # MADisplaced=REF(MA_CLOSE,M)
 

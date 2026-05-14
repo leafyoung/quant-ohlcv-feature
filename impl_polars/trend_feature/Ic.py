@@ -35,7 +35,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("span_B", (df["max_high_3"] + df["min_low_3"]) / 2))
 
     # normalize/remove dimensionality
-    df = df.with_columns(pl.Series(factor_name, df["span_A"] / df["span_B"]))
+    df = df.with_columns(pl.Series(factor_name, df["span_A"] / (df["span_B"] + config.eps)))
 
     df = df.drop("max_high_1")
     df = df.drop("max_high_2")

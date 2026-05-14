@@ -24,7 +24,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("DIF", df["MIMMA_MA1"] - df["MIMMA_MA2"]))
     df = df.with_columns(pl.Series("MICD", df["DIF"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize
-    df = df.with_columns(pl.Series(factor_name, df["DIF"] / df["MICD"]))
+    df = df.with_columns(pl.Series(factor_name, df["DIF"] / (df["MICD"] + config.eps)))
 
     df = df.drop("MI")
     df = df.drop("MIMMA")

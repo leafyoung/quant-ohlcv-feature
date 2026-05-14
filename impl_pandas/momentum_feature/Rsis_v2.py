@@ -22,9 +22,9 @@ def signal(df, n, factor_name, config):
     close_diff_pos = np.where(df["close"] > df["close"].shift(1), df["close"] - df["close"].shift(1), 0)
     rsi_a = pd.Series(close_diff_pos).ewm(alpha=1 / (4 * n), adjust=config.ewm_adjust).mean()
     rsi_b = (df["close"] - df["close"].shift(1)).abs().ewm(alpha=1 / (4 * n), adjust=config.ewm_adjust).mean()
-    rsi = 100 * rsi_a / (config.normalize_eps + rsi_b)
+    rsi = 100 * rsi_a / (config.eps + rsi_b)
     rsi_min = pd.Series(rsi).rolling(int(4 * n), min_periods=config.min_periods).min()
     rsi_max = pd.Series(rsi).rolling(int(4 * n), min_periods=config.min_periods).max()
-    df[factor_name] = 100 * (rsi - rsi_min) / (config.normalize_eps + rsi_max - rsi_min)
+    df[factor_name] = 100 * (rsi - rsi_min) / (config.eps + rsi_max - rsi_min)
 
     return df

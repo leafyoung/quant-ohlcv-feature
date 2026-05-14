@@ -17,8 +17,8 @@ def signal(df, n, factor_name, config):
     df["rsi"] = (a / (a + b)) * 100
     df["median"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-    df["bbw"] = (df["std"] / df["median"]).diff(n)
-    df[factor_name] = (df["bbw"]) * (df["close"] / df["close"].shift(n) - 1 + eps) * df["rsi"]
+    df["bbw"] = (df["std"] / (df["median"] + config.eps)).diff(n)
+    df[factor_name] = (df["bbw"]) * (df["close"] / (df["close"].shift(n) + config.eps) - 1 + eps) * df["rsi"]
 
     del df["up"], df["down"], df["rsi"], df["median"]
     del df["std"], df["bbw"]

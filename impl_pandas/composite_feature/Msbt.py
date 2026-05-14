@@ -9,15 +9,15 @@ def signal(df, n, factor_name, config):
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
 
     # close price momentum
-    df["mtm"] = df["close"] / df["close"].shift(n) - 1
+    df["mtm"] = df["close"] / (df["close"].shift(n) + config.eps) - 1
     df["mtm"] = df["mtm"].rolling(n, min_periods=config.min_periods).mean()
 
     # standard deviation momentum
-    df["s_mtm"] = df["std"] / df["std"].shift(n) - 1
+    df["s_mtm"] = df["std"] / (df["std"] + config.eps).shift(n) - 1
     df["s_mtm"] = df["s_mtm"].rolling(n, min_periods=config.min_periods).mean()
 
     # bbw volatility
-    df["bbw"] = df["std"] / df["ma"]
+    df["bbw"] = df["std"] / (df["ma"] + config.eps)
     df["bbw_mean"] = df["bbw"].rolling(window=n, min_periods=config.min_periods).mean()
 
     # taker_buy_quote_asset_volume volatility

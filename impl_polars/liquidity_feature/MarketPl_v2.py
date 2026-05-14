@@ -23,9 +23,9 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(
         pl.when(condition).then(df["quote_volume"] / df["volume"]).otherwise(df["close"].shift(1)).alias("avg_p")
     )
-    # Use a tiny tolerance (1e-9) to absorb CSV float-parsing ULP differences when
+    # Use a tiny tolerance (config.normalize_eps) to absorb CSV float-parsing ULP differences when
     # avg_p (= qv/vol) lands exactly on the candle boundary (close == high/low).
-    tol = 1e-9
+    tol = config.normalize_eps
     condition1 = df["avg_p"] <= df["high"] + tol
     condition2 = df["avg_p"] >= df["low"] - tol
     df = df.with_columns(

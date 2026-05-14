@@ -18,7 +18,7 @@ def signal(df, n, factor_name, config):
     df["abs_ema"] = df["abs_diff_close"].ewm(span=n1, adjust=config.ewm_adjust).mean()
     df["abs_ema_ema"] = df["abs_ema"].ewm(span=n, adjust=config.ewm_adjust).mean()
 
-    df[factor_name] = df["ema_ema"] / df["abs_ema_ema"] * 100
+    df[factor_name] = df["ema_ema"] / (df["abs_ema_ema"] + config.eps) * 100
 
     del df["diff_close"]
     del df["ema"]

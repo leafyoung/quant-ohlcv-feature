@@ -31,8 +31,8 @@ def signal(df, n, factor_name, config):
         pl.Series("max_low", np.where(df["low"].shift(1) > df["low"], df["low"].shift(1) - df["low"], 0)).fill_nan(None)
     )
     # XPDM=IF(MAX_HIGH>MAX_LOW,HIGH-REF(HIGH,1),0)
-    # tol=1e-9: guard against CSV float-parsing ULP boundary condition flips
-    tol = 1e-9
+    # tol=config.normalize_eps: guard against CSV float-parsing ULP boundary condition flips
+    tol = config.normalize_eps
     df = df.with_columns(
         pl.Series("XPDM", np.where(df["max_high"] > df["max_low"] + tol, df["high"] - df["high"].shift(1), 0)).fill_nan(
             None
@@ -61,7 +61,7 @@ def signal(df, n, factor_name, config):
     # DI+=PDM/TR
     # df[factor_name] = df['PDM'] / df['TR'] #DI+
     # DI-=NDM/TR
-    df = df.with_columns(pl.Series(factor_name, df["NDM"] / df["TR"]))  # DI-
+    df = df.with_columns(pl.Series(factor_name, df["NDM"] / (df["TR"] + config.eps)))  # DI-
 
     # df[f'ADX_DI+_bh_{n}'] = df['DI+'].shift(1)
     # df[f'ADX_DI-_bh_{n}'] = df['DI-'].shift(1)

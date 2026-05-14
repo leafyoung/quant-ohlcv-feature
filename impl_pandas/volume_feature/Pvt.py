@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     a sell signal is generated when PVT_MA1 crosses below PVT_MA2.
     """
 
-    df["PVT"] = (df["close"] - df["close"].shift(1)) / df["close"].shift(1) * df["volume"]
+    df["PVT"] = (df["close"] - df["close"].shift(1)) / (df["close"].shift(1) + config.eps) * df["volume"]
     df["PVT_MA"] = df["PVT"].rolling(n, min_periods=config.min_periods).mean()
 
     # normalize

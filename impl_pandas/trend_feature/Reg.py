@@ -7,7 +7,7 @@ def signal(df, n, factor_name, config):
     # Measures the deviation of close from its N-period linear regression value.
     # Positive values indicate close is above the regression line (overextended upward); negative below.
     df["reg_close"] = ta.LINEARREG(df["close"], timeperiod=n)  # talib built-in linear regression
-    df[factor_name] = df["close"] / df["reg_close"] - 1
+    df[factor_name] = df["close"] / (df["reg_close"] + config.eps) - 1
 
     # remove redundant columns
     del df["reg_close"]

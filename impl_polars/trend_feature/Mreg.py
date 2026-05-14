@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
     # Measures how much close deviates from its linear regression trend, then smooths with rolling mean.
     # Captures sustained over/under-performance relative to the trend line.
     df = df.with_columns(pl.Series("reg_close", ta.LINEARREG(df["close"], timeperiod=n)))
-    df = df.with_columns(pl.Series("mreg", df["close"] / df["reg_close"] - 1))
+    df = df.with_columns(pl.Series("mreg", df["close"] / (df["reg_close"] + config.eps) - 1))
     # fill_nan(None) converts float NaN (from talib head) to polars null so rolling_mean skips them,
     # matching pandas rolling().mean() NaN-skipping behaviour.
     df = df.with_columns(pl.col("mreg").fill_nan(None).alias("mreg"))

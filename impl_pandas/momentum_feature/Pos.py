@@ -13,6 +13,6 @@ def signal(df, n, factor_name, config):
     price = (df["close"] - ref) / ref
     min_price = price.rolling(n, min_periods=config.min_periods).min()
     max_price = price.rolling(n, min_periods=config.min_periods).max()
-    df[factor_name] = (price - min_price) / (max_price - min_price)
+    df[factor_name] = (price - min_price) / (max_price - min_price + config.eps)
 
     return df

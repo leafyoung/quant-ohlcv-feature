@@ -7,8 +7,8 @@ def signal(df, n, factor_name, config):
     momentum. If COPP crosses above/below 0, it generates a buy/sell signal.
     """
     df["RC"] = 100 * (
-        (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
-        + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+        (df["close"] - df["close"].shift(n)) / (df["close"].shift(n) + config.eps)
+        + (df["close"] - df["close"].shift(2 * n)) / (df["close"].shift(2 * n) + config.eps)
     )
     df[factor_name] = df["RC"].rolling(n, min_periods=config.min_periods).mean()
 

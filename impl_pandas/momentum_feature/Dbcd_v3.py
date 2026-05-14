@@ -14,7 +14,7 @@ def signal(df, n, factor_name, config):
     We use DBCD crossing above 5% / crossing below -5% to generate buy/sell signals.
     """
     df["ma"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
-    df["BIAS"] = (df["close"] - df["ma"]) / df["ma"] * 100
+    df["BIAS"] = (df["close"] - df["ma"]) / (df["ma"] + config.eps) * 100
     df["BIAS_DIF"] = df["BIAS"] - df["BIAS"].shift(3 * n)
     t = 3 * n + 2
     df[factor_name] = sma_recursive(df["BIAS_DIF"], t, 1)

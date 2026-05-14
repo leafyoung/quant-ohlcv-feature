@@ -10,7 +10,7 @@ def signal(df, n, factor_name, config):
     # Large positive values indicate strong upside momentum in a volatile, buyer-dominated market.
     # momentum
     df = df.with_columns(pl.Series("ma", df["close"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("mtm", (df["close"] / df["ma"].shift(n) - 1) * 100))
+    df = df.with_columns(pl.Series("mtm", (df["close"] / (df["ma"] + config.eps).shift(n) - 1) * 100))
     df = df.with_columns(pl.Series("mtm_mean", df["mtm"].rolling_mean(n, min_samples=config.min_periods)))
 
     # average amplitude
@@ -19,11 +19,11 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("tr3", abs(df["low"] - df["close"].shift(1))))
     df = df.with_columns(tr=pl.max_horizontal([pl.col("tr1"), pl.col("tr2"), pl.col("tr3")]))
     df = df.with_columns(pl.Series("ATR_abs", df["tr"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("ATR", df["ATR_abs"] / df["ma"] * 100))
+    df = df.with_columns(pl.Series("ATR", df["ATR_abs"] / (df["ma"] + config.eps) * 100))
 
     # average taker buy volume
     df = df.with_columns(pl.Series("vma", df["quote_volume"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("taker_buy_ma", (df["taker_buy_quote_asset_volume"] / df["vma"]) * 100))
+    df = df.with_columns(pl.Series("taker_buy_ma", (df["taker_buy_quote_asset_volume"] / (df["vma"] + config.eps)) * 100))
     df = df.with_columns(
         pl.Series("taker_buy_mean", df["taker_buy_ma"].rolling_mean(n, min_samples=config.min_periods))
     )

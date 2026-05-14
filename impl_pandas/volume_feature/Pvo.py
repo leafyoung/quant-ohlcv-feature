@@ -7,7 +7,7 @@ def signal(df, n, factor_name, config):
     # negative values indicate declining volume relative to the trend.
     df["emap_1"] = df["volume"].ewm(span=n, min_periods=config.min_periods, adjust=config.ewm_adjust).mean()
     df["emap_2"] = df["volume"].ewm(span=n * 2, min_periods=config.min_periods, adjust=config.ewm_adjust).mean()
-    df[factor_name] = (df["emap_1"] - df["emap_2"]) / df["emap_2"]
+    df[factor_name] = (df["emap_1"] - df["emap_2"]) / (df["emap_2"] + config.eps)
 
     del df["emap_1"]
     del df["emap_2"]

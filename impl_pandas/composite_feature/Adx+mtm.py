@@ -21,9 +21,9 @@ def signal(df, n, factor_name, config):
     df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)
 
     df["TR_sum"] = df["TR"].rolling(n, min_periods=config.min_periods).sum()
-    df["DI+"] = df["PDM"] / df["TR_sum"]
+    df["DI+"] = df["PDM"] / (df["TR_sum"] + config.eps)
 
-    df["mtm"] = (df["close"] / df["close"].shift(n) - 1).rolling(window=n, min_periods=config.min_periods).mean()
+    df["mtm"] = (df["close"] / (df["close"].shift(n) + config.eps) - 1).rolling(window=n, min_periods=config.min_periods).mean()
 
     df[factor_name] = df["DI+"] * df["mtm"]
 

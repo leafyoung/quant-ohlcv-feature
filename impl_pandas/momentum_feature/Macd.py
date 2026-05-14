@@ -26,7 +26,7 @@ def signal(df, n, factor_name, config):
     df["dea"] = df["dif"].ewm(span=macd_windows, adjust=config.ewm_adjust).mean()
     df["macd"] = 2 * (df["dif"] - df["dea"])
 
-    df[factor_name] = df["macd"] / df["macd"].rolling(macd_windows, min_periods=config.min_periods).mean() - 1
+    df[factor_name] = df["macd"] / (df["macd"].rolling(macd_windows, min_periods=config.min_periods).mean() + config.eps) - 1
 
     del df["ema_short"]
     del df["ema_long"]

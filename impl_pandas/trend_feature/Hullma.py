@@ -15,7 +15,7 @@ def signal(df, n, factor_name, config):
     df["X"] = 2 * ema1 - ema2
     df["HULLMA"] = df["X"].ewm(span=int(np.sqrt(2 * n)), adjust=config.ewm_adjust).mean()
 
-    df[factor_name] = df["X"] / df["HULLMA"]
+    df[factor_name] = df["X"] / (df["HULLMA"] + config.eps)
 
     del df["X"]
     del df["HULLMA"]

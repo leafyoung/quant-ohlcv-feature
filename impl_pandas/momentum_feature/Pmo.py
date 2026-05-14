@@ -14,7 +14,7 @@ def signal(df, n, factor_name, config):
     A larger PMO (above 0) indicates a stronger uptrend; a smaller PMO (below 0) indicates
     a stronger downtrend. Buy/sell signals are generated when PMO crosses above/below its signal line.
     """
-    df["ROC"] = (df["close"] - df["close"].shift(1)) / df["close"].shift(1) * 100
+    df["ROC"] = (df["close"] - df["close"].shift(1)) / (df["close"].shift(1) + config.eps) * 100
     df["ROC_MA"] = df["ROC"].rolling(n, min_periods=config.min_periods).mean()
     df["ROC_MA10"] = df["ROC_MA"] * 10
     df["PMO"] = df["ROC_MA10"].rolling(4 * n, min_periods=config.min_periods).mean()

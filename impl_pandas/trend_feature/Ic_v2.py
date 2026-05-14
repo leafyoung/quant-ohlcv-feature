@@ -18,7 +18,7 @@ def signal(df, n, factor_name, config):
     ks = (high_max2 + low_min2) / 2.0
     span_a = (ts + ks) / 2.0
     span_b = (high_max3 + low_min3) / 2.0
-    s = (df["close"] - span_b) / (config.normalize_eps + span_a - span_b)
+    s = (df["close"] - span_b) / (config.eps + span_a - span_b)
 
     df[factor_name] = pd.Series(s)
 

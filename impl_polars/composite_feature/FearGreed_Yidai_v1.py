@@ -32,7 +32,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("c3", (df["low"] - df["close"].shift(1)).abs()))  # ABS(LOW-REF(CLOSE,1))
     df = df.with_columns(TR=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
     df = df.with_columns(pl.Series("sma", sma(df, column="close", k=n, config=config)))
-    df = df.with_columns(pl.Series("STR", df["TR"] / df["sma"]))
+    df = df.with_columns(pl.Series("STR", df["TR"] / (df["sma"] + config.eps)))
 
     # separate bull/bear amplitude
     df = df.with_columns(pl.Series("trUp", np.where(df["close"] > df["close"].shift(1), df["STR"], 0)).fill_nan(None))

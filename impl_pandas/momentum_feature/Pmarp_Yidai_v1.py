@@ -1,3 +1,4 @@
+
 import numpy as np
 
 
@@ -13,22 +14,19 @@ def signal(df, n, factor_name, config):
     df["sma"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
 
     # compare current price to sma (percentage): relative price change vs moving average
-    df["pmar"] = abs(df["close"] / df["sma"])
+    df["pmar"] = abs(df["close"] / (df["sma"] + config.eps))
 
-    # calculate how many candles in the statistical range the current candle's feature value exceeds? returns percentage
-    # count how many candles' pmar the current candle's pmar exceeds within the statistical period
-    df["pmarpSum"] = 0
-
-    k = n
-    while k > 0:
-        df["pmardiff"] = df["pmar"] - df["pmar"].shift(k)
-        df["add"] = np.where(df["pmardiff"] > 0, 1, 0)
-        df["pmarpSum"] = df["pmarpSum"] + df["add"]
-        k -= 1
-
-    df[factor_name] = df["pmarpSum"] / n * 100
+    # percentile rank via numpy — count how many of the past N values the current value exceeds
+    pmar_np = df["pmar"].to_numpy()
+    result = np.full(len(pmar_np), np.nan)
+    min_periods = config.min_periods or 1
+    for i in range(min_periods - 1, len(pmar_np)):
+        start = max(0, i - n)
+        window = pmar_np[start : i + 1]
+        result[i] = np.sum(window < pmar_np[i]) / n * 100
+    df[factor_name] = result
 
     # remove redundant columns
-    del df["sma"], df["pmar"], df["pmardiff"], df["add"], df["pmarpSum"]
+    del df["sma"], df["pmar"]
 
     return df

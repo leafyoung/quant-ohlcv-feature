@@ -5,7 +5,7 @@ def signal(df, n, factor_name, config):
     # Negative values (typical) indicate VWAP is below the high; values near 0 suggest price is near VWAP.
     df["price"] = (
         df["quote_volume"].rolling(n, min_periods=config.min_periods).sum()
-        / df["volume"].rolling(n, min_periods=config.min_periods).sum()
+        / (df["volume"].rolling(n, min_periods=config.min_periods).sum() + config.eps)
     )
     df[factor_name] = df["price"] / df["high"] - 1
 

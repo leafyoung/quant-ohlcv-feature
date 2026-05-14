@@ -31,7 +31,7 @@ def signal(df, n, factor_name, config):
     # price = (df['high'] + df['low']) / 2.
     # low_min = df['low'].rolling(n, min_periods=config.min_periods).min()
     # high_max = df['high'].rolling(n, min_periods=config.min_periods).max()
-    # price_ch = 2 * (price - 0.5 - low_min / (1e-9 + high_max - low_min))
+    # price_ch = 2 * (price - 0.5 - low_min / (config.eps + high_max - low_min))
     # price_ch = np.where(price_ch > 0.99, 0.99, price_ch)
     # price_ch = np.where(price_ch < -0.99, -0.99, price_ch)
     # price_ch = 0.3 * pd.Series(price_ch) + 0.7 * pd.Series(price_ch).shift(1)

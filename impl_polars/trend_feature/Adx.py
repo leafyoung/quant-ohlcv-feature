@@ -53,14 +53,14 @@ def signal(df, n, factor_name, config):
     # TR=SUM(TR,N1)
     df = df.with_columns(pl.Series("TR_sum", df["TR"].rolling_sum(n, min_samples=config.min_periods)))
     # DI+=PDM/TR
-    df = df.with_columns(pl.Series("DI+", df["PDM"] / df["TR"]))
+    df = df.with_columns(pl.Series("DI+", df["PDM"] / (df["TR"] + config.eps)))
     # DI-=NDM/TR
-    df = df.with_columns(pl.Series("DI-", df["NDM"] / df["TR"]))
+    df = df.with_columns(pl.Series("DI-", df["NDM"] / (df["TR"] + config.eps)))
 
     df = df.with_columns(pl.Series(f"ADX_DI+_bh_{n}", df["DI+"].shift(1)))
     df = df.with_columns(pl.Series(f"ADX_DI-_bh_{n}", df["DI-"].shift(1)))
     # normalize
-    df = df.with_columns(pl.Series(factor_name, (df["PDM"] + df["NDM"]) / df["TR"]))
+    df = df.with_columns(pl.Series(factor_name, (df["PDM"] + df["NDM"]) / (df["TR"] + config.eps)))
 
     # remove intermediate data
     df = df.drop("max_high")

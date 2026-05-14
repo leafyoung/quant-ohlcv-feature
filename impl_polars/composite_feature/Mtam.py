@@ -10,7 +10,7 @@ def signal(df, n, factor_name, config):
     # Positive values indicate momentum backed by buyer-initiated trades in a volatile market.
 
     # calculate momentum
-    df = df.with_columns(pl.Series("mtm", df["close"] / df["close"].shift(n) - 1))
+    df = df.with_columns(pl.Series("mtm", df["close"] / (df["close"].shift(n) + config.eps) - 1))
 
     # taker buy ratio
     volume = df["quote_volume"].rolling_sum(n, min_samples=config.min_periods)
@@ -24,7 +24,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(tr=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
     df = df.with_columns(pl.Series("atr", df["tr"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("avg_price_", df["close"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("wd_atr", df["atr"] / df["avg_price_"]))
+    df = df.with_columns(pl.Series("wd_atr", df["atr"] / (df["avg_price_"] + config.eps)))
 
     # momentum * taker buy ratio * volatility
     df = df.with_columns(pl.Series("mtm", df["mtm"] * df["taker_by_ratio"] * df["wd_atr"]))

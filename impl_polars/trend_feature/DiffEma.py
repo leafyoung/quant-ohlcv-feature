@@ -15,7 +15,7 @@ def signal(df, n, factor_name, config):
 
     df = df.with_columns(pl.Series("diff_ema_mean", df["diff_ema"].ewm_mean(span=n, adjust=config.ewm_adjust)))
 
-    df = df.with_columns(pl.Series(factor_name, df["diff_ema"] / df["diff_ema_mean"] - 1))
+    df = df.with_columns(pl.Series(factor_name, df["diff_ema"] / (df["diff_ema_mean"] + config.eps) - 1))
 
     df = df.drop("ema_short")
     df = df.drop("ema_long")

@@ -10,7 +10,7 @@ def signal(df, n, factor_name, config):
     # Low-volume uptrends are amplified; high-volume environments reduce the signal.
     eps = config.eps
     df["tp"] = (df["high"] + df["low"] + df["close"]) / 3
-    df["norm_quote_volume"] = df["quote_volume"] / df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
+    df["norm_quote_volume"] = df["quote_volume"] / (df["quote_volume"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
     reg_price = ta.LINEARREG(df["tp"], timeperiod=n)
     df["tp_reg_return"] = reg_price.pct_change(n)
     df["tp_reg_return_div_norm_vol"] = df["tp_reg_return"] / (eps + df["norm_quote_volume"])

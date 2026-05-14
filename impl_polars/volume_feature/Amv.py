@@ -19,7 +19,7 @@ def signal(df, n, factor_name, config):
         pl.Series(
             "AMV1",
             df["AMOV"].rolling_sum(n, min_samples=config.min_periods)
-            / df["volume"].rolling_sum(n, min_samples=config.min_periods),
+            / (df["volume"].rolling_sum(n, min_samples=config.min_periods) + config.eps),
         )
     )
     # df['AMV2'] = df['AMOV'].rolling(n * 3).sum() / df['volume'].rolling(n * 3).sum()

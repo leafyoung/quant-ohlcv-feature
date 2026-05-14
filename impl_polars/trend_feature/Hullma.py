@@ -16,7 +16,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("X", 2 * ema1 - ema2))
     df = df.with_columns(pl.Series("HULLMA", df["X"].ewm_mean(span=int(np.sqrt(2 * n)), adjust=config.ewm_adjust)))
 
-    df = df.with_columns(pl.Series(factor_name, df["X"] / df["HULLMA"]))
+    df = df.with_columns(pl.Series(factor_name, df["X"] / (df["HULLMA"] + config.eps)))
 
     df = df.drop("X")
     df = df.drop("HULLMA")

@@ -17,7 +17,7 @@ def signal(df, n, factor_name, config):
     then takes the difference between moving averages of different time lengths, then takes another
     moving average. Buy/sell signals are generated when RCCD crosses above/below 0.
     """
-    df = df.with_columns(pl.Series("RC", df["close"] / df["close"].shift(2 * n)))
+    df = df.with_columns(pl.Series("RC", df["close"] / (df["close"].shift(2 * n) + config.eps)))
     df = df.with_columns(pl.Series("ARC1", df["RC"].rolling_mean(2 * n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("MA1", df["ARC1"].shift(1).rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("MA2", df["ARC1"].shift(1).rolling_mean(2 * n, min_samples=config.min_periods)))

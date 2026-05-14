@@ -10,14 +10,14 @@ def signal(df, n, factor_name, config):
     # Captures acceleration of price relative to its own volatility band.
     df["median"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-    df["grid"] = (df["close"] - df["median"]) / df["std"]
+    df["grid"] = (df["close"] - df["median"]) / (df["std"] + config.eps)
     df["grid"] = df["grid"].replace([np.inf, -np.inf], np.nan)
-    df["grid"].fillna(value=0, inplace=True)
+    df["grid"] = df["grid"].fillna(value=0)
     df["grid"] = df["grid"].rolling(window=n, min_periods=config.min_periods).mean()
     # pct_change with denominator floor: avoids FP amplification when rolling-mean-of-zscores ≈ 0
     grid_arr = df["grid"].to_numpy(dtype=float)
     prev = np.concatenate([[np.nan] * n, grid_arr[:-n]])
-    df[factor_name] = (grid_arr - prev) / np.where(np.abs(prev) > 1e-9, prev, np.nan)
+    df[factor_name] = (grid_arr - prev) / np.where(np.abs(prev) > config.normalize_eps, prev, np.nan)
     # df['gridInt'] = df['grid'].astype("int")
     # df[factor_name] = df['gridInt'].pct_change(n)
 

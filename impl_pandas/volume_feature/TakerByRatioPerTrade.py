@@ -9,6 +9,6 @@ def signal(df, n, factor_name, config):
     buy_volume = df["taker_buy_quote_asset_volume"].rolling(n, min_periods=config.min_periods).sum()
 
     df["trade_mean"] = df["trade_num"].rolling(n, min_periods=config.min_periods).mean()
-    df[factor_name] = buy_volume / volume / df["trade_mean"]
+    df[factor_name] = buy_volume / volume / (df["trade_mean"] + config.eps)
 
     return df

@@ -10,13 +10,13 @@ def signal(df, n, factor_name, config):
     # Positive product = both price and volume trending in the same direction (confirming signal).
     df = df.with_columns(
         pl.Series(
-            "close_change", (df["close"] / df["close"].shift(n) - 1).ewm_mean(span=n, adjust=config.ewm_adjust) * 100
+            "close_change", (df["close"] / (df["close"].shift(n) + config.eps) - 1).ewm_mean(span=n, adjust=config.ewm_adjust) * 100
         )
     )
     df = df.with_columns(
         pl.Series(
             "vol_change",
-            (df["quote_volume"] / df["quote_volume"].shift(n) - 1).ewm_mean(span=n, adjust=config.ewm_adjust) * 100,
+            (df["quote_volume"] / (df["quote_volume"].shift(n) + config.eps) - 1).ewm_mean(span=n, adjust=config.ewm_adjust) * 100,
         )
     )
 

@@ -11,11 +11,11 @@ def signal(df, n, factor_name, config):
     # volume_ratio values. Those edge cases can flip between signed zero, tiny finite values,
     # and inf while leaving the overall signal unchanged.
     df["close_ratio"] = abs(
-        (df["close"] - df["close_shift"].rolling(n, min_periods=config.min_periods).mean()) / df["close_shift"]
+        (df["close"] - df["close_shift"].rolling(n, min_periods=config.min_periods).mean()) / (df["close_shift"] + config.eps)
     )
-    df["volume_ratio"] = (df["volume"] - df["volume_shift"].rolling(n, min_periods=config.min_periods).mean()) / df[
-        "volume_shift"
-    ]
+    df["volume_ratio"] = (df["volume"] - df["volume_shift"].rolling(n, min_periods=config.min_periods).mean()) / (
+        df["volume_shift"] + config.eps
+    )
 
     df["angle"] = df["close_ratio"] * df["volume_ratio"]
 
@@ -25,7 +25,7 @@ def signal(df, n, factor_name, config):
     df.loc[condition, "direction"] = -1  # flip the indicator to a positive number
     df.loc[condition, "adj"] = np.inf
 
-    df[factor_name] = df["close_ratio"] / df["volume_ratio"] * df["direction"] * df["adj"]
+    df[factor_name] = df["close_ratio"] / (df["volume_ratio"] + config.eps) * df["direction"] * df["adj"]
     df[factor_name] = df[factor_name] / n  # normalize by window length
 
     del df["close_shift"]

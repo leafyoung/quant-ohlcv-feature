@@ -12,7 +12,7 @@ def signal(df, n, factor_name, config):
     tp = (df["high"] + df["low"] + df["close"]) / 3.0
     ma = tp.rolling_mean(n, min_samples=config.min_periods)
     md = (tp - ma).abs().rolling_mean(n, min_samples=config.min_periods)
-    cci = (tp - ma) / (config.normalize_eps + 0.015 * md)
+    cci = (tp - ma) / (config.eps + 0.015 * md)
     cci_middle = pl.Series(cci).rolling_mean(n, min_samples=config.min_periods)
     cci_upper = cci_middle + 2 * pl.Series(cci).rolling_std(n, min_samples=config.min_periods, ddof=config.ddof)
 

@@ -9,8 +9,8 @@ def signal(df, n, factor_name, config):
     # COPP
     # RC=100*((CLOSE-REF(CLOSE,N1))/REF(CLOSE,N1)+(CLOSE-REF(CLOSE,N2))/REF(CLOSE,N2))
     df["RC"] = 100 * (
-        (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
-        + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+        (df["close"] - df["close"].shift(n)) / (df["close"].shift(n) + config.eps)
+        + (df["close"] - df["close"].shift(2 * n)) / (df["close"].shift(2 * n) + config.eps)
     )
     df["RC_mean"] = df["RC"].rolling(n, min_periods=config.min_periods).mean()
 
@@ -22,11 +22,11 @@ def signal(df, n, factor_name, config):
     df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)  # TR=MAX(HIGH-LOW,ABS(HIGH-REF(CLOSE,1)),ABS(LOW-REF(CLOSE,1)))
     df["_ATR"] = df["TR"].rolling(n, min_periods=config.min_periods).mean()  # ATR=MA(TR,N)
     # normalize ATR indicator
-    df["ATR"] = df["_ATR"] / df["median"]
+    df["ATR"] = df["_ATR"] / (df["median"] + config.eps)
 
     # average taker buy ratio
     df["vma"] = df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
-    df["taker_buy_ma"] = (df["taker_buy_quote_asset_volume"] / df["vma"]) * 100
+    df["taker_buy_ma"] = (df["taker_buy_quote_asset_volume"] / (df["vma"] + config.eps)) * 100
     df["taker_buy_mean"] = df["taker_buy_ma"].rolling(window=n, min_periods=config.min_periods).mean()
 
     # composite indicator

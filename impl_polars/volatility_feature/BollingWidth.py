@@ -12,7 +12,7 @@ def signal(df, n, factor_name, config):
     eps = config.eps
     df = df.with_columns(pl.Series("median", df["close"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, ddof=config.ddof, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("z_score", (abs(df["close"] - df["median"]) / df["std"]).fill_nan(None)))
+    df = df.with_columns(pl.Series("z_score", (abs(df["close"] - df["median"]) / (df["std"] + config.eps)).fill_nan(None)))
     df = df.with_columns(pl.Series("m", df["z_score"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("upper", df["median"] + df["std"] * df["m"]))
     df = df.with_columns(pl.Series("lower", df["median"] - df["std"] * df["m"]))

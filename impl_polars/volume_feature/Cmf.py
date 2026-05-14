@@ -17,7 +17,7 @@ def signal(df, n, factor_name, config):
         pl.Series(
             factor_name,
             A.rolling_sum(n, min_samples=config.min_periods)
-            / df["volume"].rolling_sum(n, min_samples=config.min_periods),
+            / (df["volume"].rolling_sum(n, min_samples=config.min_periods) + config.eps),
         )
     )
 

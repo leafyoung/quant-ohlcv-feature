@@ -30,7 +30,7 @@ def signal(df, n, factor_name, config):
     )
 
     # calculate the offset ratio of closing price relative to mean deviation
-    df = df.with_columns(pl.Series(factor_name, (df["distance"] / df["ping_jun_cha"]) - 1))
+    df = df.with_columns(pl.Series(factor_name, (df["distance"] / (df["ping_jun_cha"] + config.eps)) - 1))
 
     df = df.drop(["median", "cha", "ping_jun_cha", "distance"])
 

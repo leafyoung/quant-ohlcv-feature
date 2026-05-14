@@ -18,7 +18,7 @@ def signal(df, n, factor_name, config):
     df.loc[condition_1, "distance"] = df["close"] - df["ping_jun_cha"]
 
     # calculate the offset ratio of closing price relative to mean deviation
-    df[factor_name] = (df["distance"] / df["ping_jun_cha"]) - 1
+    df[factor_name] = (df["distance"] / (df["ping_jun_cha"] + config.eps)) - 1
 
     del df["median"], df["cha"], df["ping_jun_cha"], df["distance"]
 

@@ -17,7 +17,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("abs_diff_close", abs(df["tp"] - df["ma"])))
     df = df.with_columns(pl.Series("md", df["abs_diff_close"].ewm_mean(span=n, adjust=config.ewm_adjust)))
 
-    df = df.with_columns(pl.Series(factor_name, (df["tp"] - df["ma"]) / df["md"]))
+    df = df.with_columns(pl.Series(factor_name, (df["tp"] - df["ma"]) / (df["md"] + config.eps)))
 
     # # delete intermediate data
     # del df['oma']

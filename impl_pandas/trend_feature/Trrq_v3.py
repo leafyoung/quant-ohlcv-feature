@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     eps = config.eps
     df["tp"] = (df["high"] + df["low"] + df["close"]) / 3
     df["normalized_quote_volume"] = (
-        df["quote_volume"] / df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
+        df["quote_volume"] / (df["quote_volume"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
     )
     reg_price = ta.LINEARREG(df["tp"], timeperiod=n)
     df["tp_reg_price_change"] = reg_price.pct_change(n)

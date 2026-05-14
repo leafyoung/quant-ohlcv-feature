@@ -24,7 +24,7 @@ def signal(df, n, factor_name, config):
     # MAX_LOW=IF(REF(LOW,1)>LOW,REF(LOW,1)-LOW,0)
     df["max_low"] = np.where(df["low"].shift(1) > df["low"], df["low"].shift(1) - df["low"], 0)
     # XPDM=IF(MAX_HIGH>MAX_LOW,HIGH-REF(HIGH,1),0) — tol guards CSV float-parsing ULP boundary flips
-    tol = 1e-9
+    tol = config.normalize_eps
     df["XPDM"] = np.where(df["max_high"] > df["max_low"] + tol, df["high"] - df["high"].shift(1), 0)
     # PDM=SUM(XPDM,N1)
     df["PDM"] = df["XPDM"].rolling(n, min_periods=config.min_periods).sum()
@@ -45,7 +45,7 @@ def signal(df, n, factor_name, config):
     # DI+=PDM/TR
     # df[factor_name] = df['PDM'] / df['TR'] #DI+
     # DI-=NDM/TR
-    df[factor_name] = df["NDM"] / df["TR"]  # DI-
+    df[factor_name] = df["NDM"] / (df["TR"] + config.eps)  # DI-
 
     # df[f'ADX_DI+_bh_{n}'] = df['DI+'].shift(1)
     # df[f'ADX_DI-_bh_{n}'] = df['DI-'].shift(1)

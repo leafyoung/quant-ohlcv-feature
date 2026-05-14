@@ -11,9 +11,9 @@ def signal(df, n, factor_name, config):
     # resistance; negative EMV indicates falling with low resistance.
     mpm = (df["high"] + df["low"]) / 2.0 - (df["high"].shift(1) + df["low"].shift(1)) / 2.0
     v_divisor = df["volume"].rolling(n, min_periods=config.min_periods).mean()
-    _br = df["volume"] / v_divisor / (config.normalize_eps + df["high"] - df["low"])
+    _br = df["volume"] / v_divisor / (config.eps + df["high"] - df["low"])
 
-    s = mpm / (config.normalize_eps + _br)
+    s = mpm / (config.eps + _br)
     df[factor_name] = pd.Series(s)
 
     return df

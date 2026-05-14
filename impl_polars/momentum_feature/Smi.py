@@ -27,7 +27,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("HL", df["max_high"] - df["min_low"]))
     df = df.with_columns(pl.Series("ema_hl", df["HL"].ewm_mean(span=n, adjust=config.ewm_adjust)))
     df = df.with_columns(pl.Series("DHL", df["ema_hl"].ewm_mean(span=n, adjust=config.ewm_adjust)))
-    df = df.with_columns(pl.Series("SMI", 100 * df["DS"] / df["DHL"]))
+    df = df.with_columns(pl.Series("SMI", 100 * df["DS"] / (df["DHL"] + config.eps)))
     df = df.with_columns(pl.Series(factor_name, df["SMI"].rolling_mean(n, min_samples=config.min_periods)))
 
     df = df.drop("max_high")

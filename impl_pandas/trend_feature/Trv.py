@@ -6,10 +6,10 @@ def signal(df, n, factor_name, config):
     # Captures the velocity of the trend rather than the raw price movement.
     # calculate volatility factor
     df["ma"] = df["close"].rolling(window=n, min_periods=config.min_periods).mean()
-    df["trv"] = 100 * ((df["ma"] - df["ma"].shift(n)) / df["ma"].shift(n))
+    df["trv"] = 100 * ((df["ma"] - df["ma"].shift(n)) / (df["ma"] + config.eps).shift(n))
     df[factor_name] = df["trv"].rolling(n, min_periods=config.min_periods).mean()
 
     drop_col = ["ma", "trv"]
-    df.drop(columns=drop_col, inplace=True)
+    df = df.drop(columns=drop_col)
 
     return df

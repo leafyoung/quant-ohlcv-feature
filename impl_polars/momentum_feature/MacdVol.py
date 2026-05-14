@@ -20,7 +20,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("MACDV", df["ema_volume_1"] - df["ema_volume_2"]))
     df = df.with_columns(pl.Series("SIGNAL", df["MACDV"].rolling_mean(N3, min_samples=config.min_periods)))
     # normalize
-    df = df.with_columns(pl.Series(factor_name, df["MACDV"] / df["SIGNAL"] - 1))
+    df = df.with_columns(pl.Series(factor_name, df["MACDV"] / (df["SIGNAL"] + config.eps) - 1))
 
     df = df.drop("ema_volume_1")
     df = df.drop("ema_volume_2")

@@ -26,11 +26,11 @@ def signal(df, n, factor_name, config):
     df["tr"] = df[["c1", "c2", "c3"]].max(axis=1)
     df["atr"] = df["tr"].rolling(window=n1, min_periods=config.min_periods).mean()
     df["avg_price_"] = df["close"].rolling(window=n1, min_periods=config.min_periods).mean()
-    df["wd_atr"] = df["atr"] / df["avg_price_"]
+    df["wd_atr"] = df["atr"] / (df["avg_price_"] + config.eps)
 
     # average taker buy ratio
     df["vma"] = df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
-    df["taker_buy_ma"] = (df["taker_buy_quote_asset_volume"] / df["vma"]) * 100
+    df["taker_buy_ma"] = (df["taker_buy_quote_asset_volume"] / (df["vma"] + config.eps)) * 100
     df["taker_buy_mean"] = df["taker_buy_ma"].rolling(window=n, min_periods=config.min_periods).mean()
 
     indicator = "mtm_mean"
@@ -53,6 +53,6 @@ def signal(df, n, factor_name, config):
         "taker_buy_ma",
         "taker_buy_mean",
     ]
-    df.drop(columns=drop_col, inplace=True)
+    df = df.drop(columns=drop_col)
 
     return df

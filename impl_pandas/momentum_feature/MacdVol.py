@@ -17,7 +17,7 @@ def signal(df, n, factor_name, config):
     df["MACDV"] = df["ema_volume_1"] - df["ema_volume_2"]
     df["SIGNAL"] = df["MACDV"].rolling(N3, min_periods=config.min_periods).mean()
     # normalize
-    df[factor_name] = df["MACDV"] / df["SIGNAL"] - 1
+    df[factor_name] = df["MACDV"] / (df["SIGNAL"] + config.eps) - 1
 
     del df["ema_volume_1"]
     del df["ema_volume_2"]

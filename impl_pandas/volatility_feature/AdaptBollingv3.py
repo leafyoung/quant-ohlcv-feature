@@ -7,7 +7,7 @@ def signal(df, n, factor_name, config):
 
     # ==============================================================
 
-    df["mtm"] = df["close"] / df["close"].shift(n1) - 1
+    df["mtm"] = df["close"] / (df["close"].shift(n1) + config.eps) - 1
     df["mtm_mean"] = df["mtm"].rolling(window=n1, min_periods=config.min_periods).mean()
 
     # calculate volatility factor wd_atr based on price ATR
@@ -17,12 +17,12 @@ def signal(df, n, factor_name, config):
     df["tr"] = df[["c1", "c2", "c3"]].max(axis=1)
     df["atr"] = df["tr"].rolling(window=n1, min_periods=config.min_periods).mean()
     df["avg_price_"] = df["close"].rolling(window=n1, min_periods=config.min_periods).mean()
-    df["wd_atr"] = df["atr"] / df["avg_price_"]
+    df["wd_atr"] = df["atr"] / (df["avg_price_"] + config.eps)
 
     # reference ATR to calculate volatility factor for MTM indicator
     df["mtm_l"] = df["low"] / df["low"].shift(n1) - 1
     df["mtm_h"] = df["high"] / df["high"].shift(n1) - 1
-    df["mtm_c"] = df["close"] / df["close"].shift(n1) - 1
+    df["mtm_c"] = df["close"] / (df["close"].shift(n1) + config.eps) - 1
     df["mtm_c1"] = df["mtm_h"] - df["mtm_l"]
     df["mtm_c2"] = abs(df["mtm_h"] - df["mtm_c"].shift(1))
     df["mtm_c3"] = abs(df["mtm_l"] - df["mtm_c"].shift(1))
@@ -71,6 +71,6 @@ def signal(df, n, factor_name, config):
         "mtm_atr_mean",
         "avg_price_",
     ]
-    df.drop(columns=drop_col, inplace=True)
+    df = df.drop(columns=drop_col)
 
     return df

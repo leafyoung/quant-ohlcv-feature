@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
     df["c3"] = abs(df["low"] - df["close"].shift(1))  # ABS(LOW-REF(CLOSE,1))
     df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)
     df["sma"] = sma(df, column="close", k=n, config=config)
-    df["STR"] = df["TR"] / df["sma"]
+    df["STR"] = df["TR"] / (df["sma"] + config.eps)
 
     # separate bull/bear amplitude
     df["trUp"] = np.where(df["close"] > df["close"].shift(1), df["STR"], 0)

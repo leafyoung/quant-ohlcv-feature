@@ -7,7 +7,7 @@ def signal(df, n, factor_name, config):
     # Measures how much close deviates from its linear regression trend, then smooths with rolling mean.
     # Captures sustained over/under-performance relative to the trend line.
     df["reg_close"] = ta.LINEARREG(df["close"], timeperiod=n)  # talib built-in linear regression
-    df["mreg"] = df["close"] / df["reg_close"] - 1
+    df["mreg"] = df["close"] / (df["reg_close"] + config.eps) - 1
     df[factor_name] = df["mreg"].rolling(n, min_periods=config.min_periods).mean()
 
     # remove redundant columns

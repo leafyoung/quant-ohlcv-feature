@@ -20,7 +20,7 @@ def signal(df, n, factor_name, config):
 
     nvi_inc = np.where(
         df["volume"] < df["volume"].shift(1),
-        1 + (df["close"] - df["close"].shift(1)) / (config.normalize_eps + df["close"]),
+        1 + (df["close"] - df["close"].shift(1)) / (config.eps + df["close"]),
         1,
     )
     nvi_inc[0] = 100

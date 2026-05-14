@@ -21,7 +21,7 @@ def signal(df, n, factor_name, config):
     bvs = pl.Series(bv).rolling_sum(n, min_samples=config.min_periods)
     cvs = pl.Series(_cv).rolling_sum(n, min_samples=config.min_periods)
 
-    s = (avs + 0.5 * cvs) / (config.normalize_eps + bvs + 0.5 * cvs)
+    s = (avs + 0.5 * cvs) / (config.eps + bvs + 0.5 * cvs)
 
     df = df.with_columns(pl.Series(factor_name, s))
 
