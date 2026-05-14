@@ -1,10 +1,8 @@
 import numpy as np
+import polars as pl
 
 
-eps = 1e-8
-
-
-def signal(*args):
+def signal(df, n, factor_name, config):
     # ******************** KAMA ********************
     # N=10
     # N1=2
@@ -22,27 +20,24 @@ def signal(*args):
     # making KAMA follow price movements closely, reducing its lag; when the current trend is weak (e.g., in an oscillating market), the ER value is small,
     # KAMA assigns less weight to the current price, increasing KAMA's lag, making it smoother and avoiding too many trading signals.
     # Unlike VIDYA, the KAMA indicator can set upper bound FAST and lower bound SLOW for the weight.
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
-    direction = df['close'] - df['close'].shift(1)
-    volatility = df['close'].diff(1).abs().rolling(int(10 * n), min_periods=1).sum()
+    eps = config.eps
+    direction = df["close"] - df["close"].shift(n)
+    volatility = df["close"].diff(1).abs().rolling_sum(int(10 * n), min_samples=config.min_periods)
     fast = 2 / (n / 5 + 1)
     slow = 2 / (3 * n + 1)
 
     _l = []
     # calculate kama
-    for i, (c, d, v) in enumerate(zip(df['close'], direction, volatility)):
+    for i, (c, d, v) in enumerate(zip(df["close"].to_numpy(), direction.to_numpy(), volatility.to_numpy())):
         if i < n:
-            _l.append(0)
+            _l.append(float("nan"))
         else:
             er = np.divide(d, (v + eps))
             smooth = er * (fast - slow) + slow
             cof = smooth * smooth
-            _l.append(cof * c + (1-cof) * _l[-1])
+            _l.append(float(cof * c + (1 - cof) * _l[-1]))
 
-    df[factor_name] = _l
+    df = df.with_columns(pl.Series(factor_name, _l, strict=False))
 
     # df[factor_name] = ta.KAMA(df['close'], timeperiod=n)
 

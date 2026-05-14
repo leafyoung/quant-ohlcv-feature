@@ -1,4 +1,7 @@
-def signal(*args):
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # PMO indicator
     """
     N1=10
@@ -14,19 +17,15 @@ def signal(*args):
     A larger PMO (above 0) indicates a stronger uptrend; a smaller PMO (below 0) indicates
     a stronger downtrend. Buy/sell signals are generated when PMO crosses above/below its signal line.
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+    df = df.with_columns(pl.Series("ROC", (df["close"] - df["close"].shift(1)) / df["close"].shift(1) * 100))
+    df = df.with_columns(pl.Series("ROC_MA", df["ROC"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("ROC_MA10", df["ROC_MA"] * 10))
+    df = df.with_columns(pl.Series("PMO", df["ROC_MA10"].rolling_mean(4 * n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series(factor_name, df["PMO"].rolling_mean(2 * n, min_samples=config.min_periods)))
 
-    df['ROC'] = (df['close'] - df['close'].shift(1)) / df['close'].shift(1) * 100
-    df['ROC_MA'] = df['ROC'].rolling(n, min_periods=1).mean()
-    df['ROC_MA10'] = df['ROC_MA'] * 10
-    df['PMO'] = df['ROC_MA10'].rolling(4 * n, min_periods=1).mean()
-    df[factor_name] = df['PMO'].rolling(2 * n, min_periods=1).mean()
-
-    del df['ROC']
-    del df['ROC_MA']
-    del df['ROC_MA10']
-    del df['PMO']
+    df = df.drop("ROC")
+    df = df.drop("ROC_MA")
+    df = df.drop("ROC_MA10")
+    df = df.drop("PMO")
 
     return df

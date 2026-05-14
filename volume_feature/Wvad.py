@@ -1,5 +1,7 @@
-def signal(*args):
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # WVAD indicator
     """
     N=20
@@ -13,17 +15,22 @@ def signal(*args):
     When WVAD crosses above 0, it indicates strong buying power;
     when WVAD crosses below 0, it indicates strong selling power.
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
-    df['VAD'] = (df['close'] - df['open']) / (df['high'] - df['low']) * df['volume']
-    df['WVAD'] = df['VAD'].rolling(n).sum()
+    df = df.with_columns(pl.Series("VAD", (df["close"] - df["open"]) / (df["high"] - df["low"]) * df["volume"]))
+    df = df.with_columns(pl.Series("WVAD", df["VAD"].rolling_sum(n, min_samples=config.min_periods)))
 
     # normalize
-    df[factor_name] = (df['WVAD'] - df['WVAD'].rolling(n).min()) / (df['WVAD'].rolling(n).max() - df['WVAD'].rolling(n).min())
+    df = df.with_columns(
+        pl.Series(
+            factor_name,
+            (df["WVAD"] - df["WVAD"].rolling_min(n, min_samples=config.min_periods))
+            / (
+                df["WVAD"].rolling_max(n, min_samples=config.min_periods)
+                - df["WVAD"].rolling_min(n, min_samples=config.min_periods)
+            ),
+        )
+    )
 
-    del df['VAD']
-    del df['WVAD']
+    df = df.drop("VAD")
+    df = df.drop("WVAD")
 
     return df

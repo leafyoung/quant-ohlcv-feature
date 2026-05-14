@@ -1,7 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # TMF indicator
     """
     N=80
@@ -13,15 +13,20 @@ def signal(*args):
     A buy signal is generated when TMF crosses above 0;
     a sell signal is generated when TMF crosses below 0.
     """
-    df['ref'] = df['close'].shift(1)
-    df['max_high'] = df[['high', 'ref']].max(axis=1)
-    df['min_low'] = df[['low', 'ref']].min(axis=1)
+    df = df.with_columns(pl.Series("ref", df["close"].shift(1)))
+    df = df.with_columns(max_high=pl.max_horizontal([pl.col("high"), pl.col("ref")]))
+    df = df.with_columns(min_low=pl.min_horizontal([pl.col("low"), pl.col("ref")]))
 
-    T = df['volume'] * ( 2 * df['close'] - df['max_high'] - df['min_low']) / (df['max_high'] - df['min_low'])
-    df[factor_name] = T.ewm(n, adjust=False).mean() / df['volume'].ewm(n, adjust=False).mean()
-    
-    del df['ref']
-    del df['max_high']
-    del df['min_low']
+    T = df["volume"] * (2 * df["close"] - df["max_high"] - df["min_low"]) / (df["max_high"] - df["min_low"])
+    df = df.with_columns(
+        pl.Series(
+            factor_name,
+            T.ewm_mean(span=n, adjust=config.ewm_adjust) / df["volume"].ewm_mean(span=n, adjust=config.ewm_adjust),
+        )
+    )
+
+    df = df.drop("ref")
+    df = df.drop("max_high")
+    df = df.drop("min_low")
 
     return df

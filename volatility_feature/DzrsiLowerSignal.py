@@ -1,42 +1,45 @@
 import numpy as np
-import pandas as pd
+import polars as pl
 
 
 # ===== function: zscore normalization
-def scale_zscore(_s, _n):
-    _s = (pd.Series(_s) - pd.Series(_s).rolling(_n, min_periods=1).mean()
-          ) / pd.Series(_s).rolling(_n, min_periods=1).std()
-    return pd.Series(_s)
+def scale_zscore(_s, _n, config):
+    s = pl.Series(_s)
+    zscore = (s - s.rolling_mean(_n, min_samples=config.min_periods)) / s.rolling_std(
+        _n, min_samples=config.min_periods, ddof=config.ddof
+    )
+    # replace ±inf (std=0 edge cases) with NaN; keep float NaN as float NaN so that
+    # polars mean()/std() propagate NaN (treated as missing by compare.py, same as pandas)
+    arr = np.array(zscore.to_list(), dtype=float)
+    arr[np.isinf(arr)] = np.nan
+    return pl.Series(arr)
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # DzrsiLowerSignal indicator (RSI Bollinger Lower band - RSI half-period MA, z-score normalized)
     # Formula: RSI = A / (A + B) where A=SUM(up_diff,N), B=SUM(down_diff,N)
     #          RSI_LOWER = MA(RSI,N) - 2*STD(RSI,N); RSI_MA = MA(RSI, N/2)
     #          result = ZSCORE(RSI_LOWER - RSI_MA, N)
     # Applies Bollinger Band logic to RSI. Measures how far the RSI lower band is below the
     # RSI half-period MA, z-score normalized. Negative values suggest RSI is below its lower band (oversold).
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
-    rtn = df['close'].diff()
+    rtn = df["close"].diff()
     up = np.where(rtn > 0, rtn, 0)
+    up = pl.Series(up).fill_nan(None)
     dn = np.where(rtn < 0, rtn.abs(), 0)
-    a = pd.Series(up).rolling(n, min_periods=1).sum()
-    b = pd.Series(dn).rolling(n, min_periods=1).sum()
+    dn = pl.Series(dn).fill_nan(None)
+    a = pl.Series(up).rolling_sum(n, min_samples=config.min_periods)
+    b = pl.Series(dn).rolling_sum(n, min_samples=config.min_periods)
 
     a *= 1e3
     b *= 1e3
 
-    rsi = a / (1e-9 + a + b)
+    rsi = a / (config.normalize_eps + a + b)
 
-    rsi_middle = rsi.rolling(n, min_periods=1).mean()
-    # rsi_upper = rsi_middle + 2 * rsi.rolling(n, min_periods=1).std()
-    rsi_lower = rsi_middle - 2 * rsi.rolling(n, min_periods=1).std()
-    rsi_ma = rsi.rolling(int(n / 2), min_periods=1).mean()
+    rsi_middle = rsi.rolling_mean(n, min_samples=config.min_periods)
+    rsi_lower = rsi_middle - 2 * rsi.rolling_std(n, min_samples=config.min_periods, ddof=config.ddof)
+    rsi_ma = rsi.rolling_mean(int(n / 2), min_samples=config.min_periods)
 
     s = rsi_lower - rsi_ma
-    df[factor_name] = scale_zscore(s, n)
+    df = df.with_columns(pl.Series(factor_name, scale_zscore(s, n, config=config)))
 
     return df

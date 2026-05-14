@@ -1,8 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # LMA indicator
     """
     N=20
@@ -10,10 +9,10 @@ def signal(*args):
     LMA is a simple moving average with the closing price replaced by the lowest price.
     Buy/sell signals are generated when the low crosses above/below LMA.
     """
-    df['low_ma'] = df['low'].rolling(n, min_periods=1).mean()
+    df = df.with_columns(pl.Series("low_ma", df["low"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize
-    df[factor_name] = df['low'] / df['low_ma'] - 1
+    df = df.with_columns(pl.Series(factor_name, df["low"] / df["low_ma"] - 1))
 
-    del df['low_ma']
+    df = df.drop("low_ma")
 
     return df

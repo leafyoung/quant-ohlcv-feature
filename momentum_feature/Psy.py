@@ -1,16 +1,13 @@
 import numpy as np
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # Psy
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
-    df['P'] = np.where(df['close'] > df['close'].shift(1), 1, 0)  # IF(CLOSE>REF(CLOSE,1),1,0)
-    df[factor_name] = df['P'].rolling(n, min_periods=1).sum() / n * 100  # PSY=IF(CLOSE>REF(CLOSE,1),1,0)/N*100
+    df = df.with_columns(pl.Series("P", np.where(df["close"] > df["close"].shift(1), 1, 0)).fill_nan(None))
+    df = df.with_columns(pl.Series(factor_name, df["P"].rolling_sum(n, min_samples=config.min_periods) / n * 100))
 
     # delete extra columns
-    del df['P']
+    df = df.drop("P")
 
     return df

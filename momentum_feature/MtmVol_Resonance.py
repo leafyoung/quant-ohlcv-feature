@@ -1,26 +1,27 @@
-def signal(*args):
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # MtmVol_Resonance indicator (MTM mean × volume change mean)
     # Formula: MTM_MEAN = MA(CLOSE/REF(CLOSE,N)-1, N)
     #          VOL_CHG = QUOTE_VOLUME / MA(QUOTE_VOLUME,N); VOL_CHG_MEAN = MA(VOL_CHG, N)
     #          result = MTM_MEAN * VOL_CHG_MEAN
     # Resonance between price momentum and relative volume activity.
     # High values indicate sustained price momentum coinciding with above-average trading volume.
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-  
-    df['mtm'] = df['close'] / df['close'].shift(n) - 1
-    df['mtm_mean'] = df['mtm'].rolling(window=n, min_periods=1).mean()
-  
-    df['quote_volume_mean'] = df['quote_volume'].rolling(n,min_periods=1).mean()
-    df['quote_volume_change'] = (df['quote_volume'] / df['quote_volume_mean'])
-    df['quote_volume_change_mean'] = df['quote_volume_change'].rolling(n,min_periods=1).mean()
+    df = df.with_columns(pl.Series("mtm", df["close"] / df["close"].shift(n) - 1))
+    df = df.with_columns(pl.Series("mtm_mean", df["mtm"].rolling_mean(n, min_samples=config.min_periods)))
 
-    df[factor_name] = df['mtm_mean']*df['quote_volume_change_mean']
+    df = df.with_columns(
+        pl.Series("quote_volume_mean", df["quote_volume"].rolling_mean(n, min_samples=config.min_periods))
+    )
+    df = df.with_columns(pl.Series("quote_volume_change", (df["quote_volume"] / df["quote_volume_mean"])))
+    df = df.with_columns(
+        pl.Series("quote_volume_change_mean", df["quote_volume_change"].rolling_mean(n, min_samples=config.min_periods))
+    )
 
-    drop_col = [
-        'mtm', 'mtm_mean','quote_volume_mean', 'quote_volume_change','quote_volume_change_mean'
-    ]
-    df.drop(columns=drop_col, inplace=True)
+    df = df.with_columns(pl.Series(factor_name, df["mtm_mean"] * df["quote_volume_change_mean"]))
+
+    drop_col = ["mtm", "mtm_mean", "quote_volume_mean", "quote_volume_change", "quote_volume_change_mean"]
+    df = df.drop(drop_col)
 
     return df

@@ -22,7 +22,7 @@ Each feature is implemented as a standalone Python function that accepts a panda
 
 ## Input Data Format
 
-All indicators expect a pandas DataFrame with the following columns:
+All indicators expect a polars DataFrame with the following columns:
 
 | Column | Type | Description |
 |---|---|---|
@@ -55,13 +55,13 @@ df = signal(df, n, factor_name)
 **Example:**
 
 ```python
-import pandas as pd
+import polars as pl
 from momentum_feature.Rsi import signal as rsi
 
-df = pd.read_csv("data/btcusd_data.csv")
+df = pl.read_csv("data/btcusd_data.csv")
 df = rsi(df, n=14, factor_name="rsi_14")
 
-print(df[["close", "rsi_14"]].tail())
+print(df.select("close", "rsi_14").tail())
 ```
 
 Intermediate calculation columns are cleaned up before returning — only `factor_name` is added to the DataFrame.
@@ -200,12 +200,12 @@ Multi-factor signals combining signals across categories for stronger predictive
 
 ---
 
-## Dependencies
+## Setup
 
-Install all dependencies with:
+Install dependencies with [uv](https://docs.astral.sh/uv/):
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 > **Note:** TA-Lib requires the underlying C library before `pip install` will work:
@@ -221,6 +221,7 @@ Each indicator file is self-contained with no cross-file imports.
 
 - **Self-contained**: Each file is an independent module with no dependencies on other feature files.
 - **Uniform interface**: All indicators share the same `signal(df, n, factor_name)` signature, making them easy to iterate over in a pipeline.
+- **Polars-native**: Built on polars DataFrames for high-performance columnar data processing with automatic parallelization.
 - **Side-effect-free cleanup**: Intermediate columns created during calculation are deleted before returning `df`.
 - **Division-by-zero safety**: A small epsilon (`eps = 1e-8`) is applied wherever denominators may be zero.
 - **Relative outputs**: Most indicators produce normalized or ratio-based outputs to avoid scale mismatch in downstream models.

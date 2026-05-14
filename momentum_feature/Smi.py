@@ -1,7 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # SMI indicator
     """
     N1=20
@@ -18,27 +18,27 @@ def signal(*args):
     measures the distance between today's closing price and the midpoint of those extremes.
     Buy/sell signals are generated when SMI crosses above/below its moving average.
     """
-    df['max_high'] = df['high'].rolling(n, min_periods=1).mean()
-    df['min_low'] = df['low'].rolling(n, min_periods=1).mean()
-    df['M'] = (df['max_high'] + df['min_low']) / 2
-    df['D'] = df['close'] - df['M']
-    df['ema'] = df['D'].ewm(n, adjust=False).mean()
-    df['DS'] = df['ema'].ewm(n, adjust=False).mean()
-    df['HL'] = df['max_high'] - df['min_low']
-    df['ema_hl'] = df['HL'].ewm(n, adjust=False).mean()
-    df['DHL'] = df['ema_hl'].ewm(n, adjust=False).mean()
-    df['SMI'] = 100 * df['DS'] / df['DHL']
-    df[factor_name] = df['SMI'].rolling(n, min_periods=1).mean()
+    df = df.with_columns(pl.Series("max_high", df["high"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("min_low", df["low"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("M", (df["max_high"] + df["min_low"]) / 2))
+    df = df.with_columns(pl.Series("D", df["close"] - df["M"]))
+    df = df.with_columns(pl.Series("ema", df["D"].ewm_mean(span=n, adjust=config.ewm_adjust)))
+    df = df.with_columns(pl.Series("DS", df["ema"].ewm_mean(span=n, adjust=config.ewm_adjust)))
+    df = df.with_columns(pl.Series("HL", df["max_high"] - df["min_low"]))
+    df = df.with_columns(pl.Series("ema_hl", df["HL"].ewm_mean(span=n, adjust=config.ewm_adjust)))
+    df = df.with_columns(pl.Series("DHL", df["ema_hl"].ewm_mean(span=n, adjust=config.ewm_adjust)))
+    df = df.with_columns(pl.Series("SMI", 100 * df["DS"] / df["DHL"]))
+    df = df.with_columns(pl.Series(factor_name, df["SMI"].rolling_mean(n, min_samples=config.min_periods)))
 
-    del df['max_high']
-    del df['min_low']
-    del df['M']
-    del df['D']
-    del df['ema']
-    del df['DS']
-    del df['HL']
-    del df['ema_hl']
-    del df['DHL']
-    del df['SMI']
+    df = df.drop("max_high")
+    df = df.drop("min_low")
+    df = df.drop("M")
+    df = df.drop("D")
+    df = df.drop("ema")
+    df = df.drop("DS")
+    df = df.drop("HL")
+    df = df.drop("ema_hl")
+    df = df.drop("DHL")
+    df = df.drop("SMI")
 
     return df

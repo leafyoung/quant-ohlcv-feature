@@ -1,13 +1,10 @@
-eps = 1e-8
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # Pvt_v2 indicator
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
-    '''
+    eps = config.eps
+    """
     PVT=(CLOSE-REF(CLOSE,1))/REF(CLOSE,1)*VOLUME
     PVT_MA1=MA(PVT,N1)
     PVT_MA2=MA(PVT,N2)
@@ -17,16 +14,18 @@ def signal(*args):
     Here we use crossings of short and long PVT moving averages to generate signals.
     A buy signal is generated when PVT_MA1 crosses above PVT_MA2;
     a sell signal is generated when PVT_MA1 crosses below PVT_MA2.
-    '''
+    """
 
-    df['PVT'] = df['close'].pct_change() * df['volume']
+    df = df.with_columns(pl.Series("PVT", df["close"].pct_change() * df["volume"]))
     # normalize
 
-    df['PVT_score'] = ((df['PVT'] - df['PVT'].rolling(n, min_periods=1).mean())
-                       / (df['PVT'].rolling(n, min_periods=1).std() + eps))
-    df[factor_name] = df['PVT_score'].rolling(n, min_periods=1).sum()
+    df = df.with_columns(
+        pl.Series("PVT_score", (df["PVT"] - df["PVT"].rolling_mean(n, min_samples=config.min_periods)))
+        / (df["PVT"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof) + eps)
+    )
+    df = df.with_columns(pl.Series(factor_name, df["PVT_score"].rolling_sum(n, min_samples=config.min_periods)))
 
     # remove irrelevant columns
-    del df['PVT'], df['PVT_score']
+    df = df.drop(["PVT", "PVT_score"])
 
     return df

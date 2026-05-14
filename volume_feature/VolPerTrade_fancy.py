@@ -1,9 +1,17 @@
-def signal(*args):
-    # Average trade size per transaction, checking if large orders appeared in this minute
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
-    df[factor_name] = df['quote_volume'].rolling(n, min_periods=1).sum() / df['trade_num'].rolling(n, min_periods=1).sum()
+
+def signal(df, n, factor_name, config):
+    # Average trade size per transaction, checking if large orders appeared in this minute
+    if "trade_num" in df.columns:
+        df = df.with_columns(
+            pl.Series(
+                factor_name,
+                df["quote_volume"].rolling_sum(n, min_samples=config.min_periods)
+                / df["trade_num"].rolling_sum(n, min_samples=config.min_periods),
+            )
+        )
+    else:
+        df = df.with_columns(pl.Series(factor_name, [None] * len(df)))
 
     return df

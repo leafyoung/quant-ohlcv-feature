@@ -1,37 +1,41 @@
 import numpy as np
+import polars as pl
 
 
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
+def signal(df, n, factor_name, config):
     # VixBw indicator (VIX Bollinger width × trend direction)
     # Formula: VIX = CLOSE/REF(CLOSE,N)-1; VIX_UPPER/LOWER = adaptive Bollinger bands on VIX
     #          result = (VIX_UPPER - VIX_LOWER) * SIGN(diff(VIX_MA, N))
     #          zeroed when short-term trend direction conflicts with long-term trend direction
     # Measures the adaptive bandwidth of a VIX-like return measure, signed by its trend direction.
     # Positive values indicate widening volatility in an uptrend; negative in a downtrend.
-    df['vix'] = df['close'] / df['close'].shift(n) - 1
-    df['vix_median'] = df['vix'].rolling(window=n, min_periods=1).mean()
-    df['vix_std'] = df['vix'].rolling(n, min_periods=1).std()
-    df['vix_score'] = abs(df['vix'] - df['vix_median']) / df['vix_std']
-    df['max'] = df['vix_score'].rolling(window=n, min_periods=1).mean().shift(1)
-    df['min'] = df['vix_score'].rolling(window=n, min_periods=1).min().shift(1)
-    df['vix_upper'] = df['vix_median'] + df['max'] * df['vix_std']
-    df['vix_lower'] = df['vix_median'] - df['max'] * df['vix_std']
-    df[factor_name] = (df['vix_upper'] - df['vix_lower']) * np.sign(df['vix_median'].diff(n))
-    condition1 = np.sign(df['vix_median'].diff(n)) != np.sign(df['vix_median'].diff(1))
-    condition2 = np.sign(df['vix_median'].diff(n)) != np.sign(df['vix_median'].diff(1).shift(1))
-    df.loc[condition1, factor_name] = 0
-    df.loc[condition2, factor_name] = 0
+    df = df.with_columns(pl.Series("vix", df["close"] / df["close"].shift(n) - 1))
+    df = df.with_columns(pl.Series("vix_median", df["vix"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(
+        pl.Series("vix_std", df["vix"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof))
+    )
+    df = df.with_columns(pl.Series("vix_score", (abs(df["vix"] - df["vix_median"]) / df["vix_std"]).fill_nan(None)))
+    df = df.with_columns(pl.Series("max", df["vix_score"].rolling_mean(n, min_samples=config.min_periods).shift(1)))
+    df = df.with_columns(pl.Series("min", df["vix_score"].rolling_min(n, min_samples=config.min_periods).shift(1)))
+    df = df.with_columns(pl.Series("vix_upper", df["vix_median"] + df["max"] * df["vix_std"]))
+    df = df.with_columns(pl.Series("vix_lower", df["vix_median"] - df["max"] * df["vix_std"]))
+    # Use .to_numpy() explicitly so np.sign returns a numpy array (not polars Series),
+    # which preserves NaN != NaN = True semantics matching pandas behaviour.
+    _sign_n = np.sign(df["vix_median"].diff(n).to_numpy())
+    _sign_1 = np.sign(df["vix_median"].diff(1).to_numpy())
+    _sign_1s = np.sign(df["vix_median"].diff(1).shift(1).to_numpy())
+    df = df.with_columns(pl.Series(factor_name, (df["vix_upper"] - df["vix_lower"]) * _sign_n))
+    condition1 = _sign_n != _sign_1
+    condition2 = _sign_n != _sign_1s
+    df = df.with_columns(pl.when(pl.Series(condition1)).then(0.0).otherwise(pl.col(factor_name)).alias(factor_name))
+    df = df.with_columns(pl.when(pl.Series(condition2)).then(0.0).otherwise(pl.col(factor_name)).alias(factor_name))
     # normalize using ATR indicator
 
-    del df['vix']
-    del df['vix_median']
-    del df['vix_std']
-    del df['max']
-    del df['min']
-    del df['vix_upper'],df['vix_lower']
+    df = df.drop("vix")
+    df = df.drop("vix_median")
+    df = df.drop("vix_std")
+    df = df.drop("max")
+    df = df.drop("min")
+    df = df.drop(["vix_upper", "vix_lower"])
 
     return df

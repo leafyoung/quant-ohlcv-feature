@@ -1,8 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # PVT indicator
     """
     PVT=(CLOSE-REF(CLOSE,1))/REF(CLOSE,1)*VOLUME
@@ -15,12 +14,12 @@ def signal(*args):
     A buy signal is generated when PVT_MA1 crosses above PVT_MA2;
     a sell signal is generated when PVT_MA1 crosses below PVT_MA2.
     """
-    df['PVT'] = (df['close'] - df['close'].shift(1)) / df['close'].shift(1) * df['volume']
-    df['PVT_MA1'] = df['PVT'].rolling(n, min_periods=1).mean()
-    df['PVT_MA2'] = df['PVT'].rolling(2 * n, min_periods=1).mean()
-    df['Pvt_v2'] = df['PVT_MA1'] - df['PVT_MA2']
+    df = df.with_columns(pl.Series("PVT", (df["close"] - df["close"].shift(1)) / df["close"].shift(1) * df["volume"]))
+    df = df.with_columns(pl.Series("PVT_MA1", df["PVT"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("PVT_MA2", df["PVT"].rolling_mean(2 * n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("Pvt_v2", df["PVT_MA1"] - df["PVT_MA2"]))
 
     # normalize
-    df[factor_name] = df['PVT'] / df['Pvt_v2'] - 1
+    df = df.with_columns(pl.Series(factor_name, df["PVT"] / df["Pvt_v2"] - 1))
 
     return df

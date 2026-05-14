@@ -1,7 +1,8 @@
 import numpy as np
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # Demaker indicator
     """
     N=20
@@ -13,21 +14,17 @@ def signal(*args):
     When Demaker>0.7, the uptrend is strong; when Demaker<0.3, the downtrend is strong.
     When Demaker crosses above 0.7 / crosses below 0.3, a buy/sell signal is generated.
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+    df = df.with_columns(pl.Series("Demax", df["high"] - df["high"].shift(1)))
+    df = df.with_columns(pl.Series("Demax", np.where(df["Demax"] > 0, df["Demax"], 0)).fill_nan(None))
+    df = df.with_columns(pl.Series("Demin", df["low"].shift(1) - df["low"]))
+    df = df.with_columns(pl.Series("Demin", np.where(df["Demin"] > 0, df["Demin"], 0)).fill_nan(None))
+    df = df.with_columns(pl.Series("Demax_ma", df["Demax"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("Demin_ma", df["Demin"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series(factor_name, df["Demax_ma"] / (df["Demax_ma"] + df["Demin_ma"])))
 
-    df['Demax'] = df['high'] - df['high'].shift(1)
-    df['Demax'] = np.where(df['Demax'] > 0, df['Demax'], 0)
-    df['Demin'] = df['low'].shift(1) - df['low']
-    df['Demin'] = np.where(df['Demin'] > 0, df['Demin'], 0)
-    df['Demax_ma'] = df['Demax'].rolling(n, min_periods=1).mean()
-    df['Demin_ma'] = df['Demin'].rolling(n, min_periods=1).mean()
-    df[factor_name] = df['Demax_ma'] / (df['Demax_ma'] + df['Demin_ma'])
-
-    del df['Demax']
-    del df['Demin']
-    del df['Demax_ma']
-    del df['Demin_ma']
+    df = df.drop("Demax")
+    df = df.drop("Demin")
+    df = df.drop("Demax_ma")
+    df = df.drop("Demin_ma")
 
     return df

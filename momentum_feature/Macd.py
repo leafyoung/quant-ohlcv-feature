@@ -1,9 +1,9 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # calculate macd indicator
-    '''
+    """
     N1=20
     N2=40
     N3=5
@@ -18,23 +18,25 @@ def signal(*args):
     moving average (signal line) to get the MACD histogram, and use histogram crossings
     above/below 0 (i.e., MACD crossing its signal line) to generate signals. This method
     can also be applied to other indicators.
-    '''
+    """
     short_windows = n
     long_windows = 3 * n
     macd_windows = int(1.618 * n)
 
-    df['ema_short'] = df['close'].ewm(span=short_windows, adjust=False).mean()
-    df['ema_long']  = df['close'].ewm(span=long_windows, adjust=False).mean()
-    df['dif']  = df['ema_short'] - df['ema_long']
-    df['dea']  = df['dif'].ewm(span=macd_windows, adjust=False).mean()
-    df['macd'] = 2 * (df['dif'] - df['dea'])
+    df = df.with_columns(pl.Series("ema_short", df["close"].ewm_mean(span=short_windows, adjust=config.ewm_adjust)))
+    df = df.with_columns(pl.Series("ema_long", df["close"].ewm_mean(span=long_windows, adjust=config.ewm_adjust)))
+    df = df.with_columns(pl.Series("dif", df["ema_short"] - df["ema_long"]))
+    df = df.with_columns(pl.Series("dea", df["dif"].ewm_mean(span=macd_windows, adjust=config.ewm_adjust)))
+    df = df.with_columns(pl.Series("macd", 2 * (df["dif"] - df["dea"])))
 
-    df[factor_name] = df['macd'] / df['macd'].rolling(macd_windows, min_periods=1).mean() - 1
+    df = df.with_columns(
+        pl.Series(factor_name, df["macd"] / df["macd"].rolling_mean(macd_windows, min_samples=config.min_periods) - 1)
+    )
 
-    del df['ema_short']
-    del df['ema_long']
-    del df['dif']
-    del df['dea']
-    del df['macd']
+    df = df.drop("ema_short")
+    df = df.drop("ema_long")
+    df = df.drop("dif")
+    df = df.drop("dea")
+    df = df.drop("macd")
 
     return df

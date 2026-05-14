@@ -1,40 +1,49 @@
-def signal(*args):
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # Damaov10 indicator (COPP × BBW × ATR composite)
     # Formula: COPP = MA(100*((CLOSE-REF(CLOSE,N))/REF(CLOSE,N) + (CLOSE-REF(CLOSE,2N))/REF(CLOSE,2N)), N)
     #          BBW = STD * MA(|CLOSE-MA|/STD, N) * 2 / MA(CLOSE,N)  (volatility-weighted Bollinger width)
     #          ATR = MA(TR,N) / MA(CLOSE,N)  (normalized ATR)
     #          result = COPP * BBW_mean * ATR
     # Combines momentum (COPP), Bollinger volatility (BBW), and range volatility (ATR) into one composite signal.
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
+    eps = config.eps
     # COPP
     # RC=100*((CLOSE-REF(CLOSE,N1))/REF(CLOSE,N1)+(CLOSE-REF(CLOSE,N2))/REF(CLOSE,N2))
-    df['RC'] = 100 * ((df['close'] - df['close'].shift(n)) / df['close'].shift(n) + (df['close'] - df['close'].shift(2 * n)) / df['close'].shift(2 * n))
-    df['RC_mean'] = df['RC'].rolling(n, min_periods=1).mean()
+    df = df.with_columns(
+        pl.Series(
+            "RC",
+            100
+            * (
+                (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
+                + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+            ),
+        )
+    )
+    df = df.with_columns(pl.Series("RC_mean", df["RC"].rolling_mean(n, min_samples=config.min_periods)))
     # BBW
-    df['median'] = df['close'].rolling(window=n).mean()
-    df['std'] = df['close'].rolling(n, min_periods=1).std(ddof=0)
-    df['z_score'] = abs(df['close'] - df['median']) / df['std']
-    df['m'] = df['z_score'].rolling(window=n).mean()
-    df['BBW'] = df['std'] * df['m'] * 2 / (df['median'] + 1e-8)
-    df['BBW_mean'] = df['BBW'].rolling(n, min_periods=1).mean()
+    df = df.with_columns(pl.Series("median", df["close"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, ddof=config.ddof, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("z_score", (df["close"] - df["median"]).abs() / df["std"]))
+    df = df.with_columns(pl.Series("m", df["z_score"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("BBW", df["std"] * df["m"] * 2 / (df["median"] + eps)))
+    df = df.with_columns(pl.Series("BBW_mean", df["BBW"].rolling_mean(n, min_samples=config.min_periods)))
     # ATR
-    df['c1'] = df['high'] - df['low']  # HIGH-LOW
-    df['c2'] = abs(df['high'] - df['close'].shift(1))  # ABS(HIGH-REF(CLOSE,1)
-    df['c3'] = abs(df['low'] - df['close'].shift(1))  # ABS(LOW-REF(CLOSE,1))
-    df['TR'] = df[['c1', 'c2', 'c3']].max(axis=1)  # TR=MAX(HIGH-LOW,ABS(HIGH-REF(CLOSE,1)),ABS(LOW-REF(CLOSE,1)))
-    df['_ATR'] = df['TR'].rolling(n, min_periods=1).mean()  # ATR=MA(TR,N)
+    df = df.with_columns(pl.Series("c1", df["high"] - df["low"]))
+    df = df.with_columns(pl.Series("c2", (df["high"] - df["close"].shift(1)).abs()))
+    df = df.with_columns(pl.Series("c3", (df["low"] - df["close"].shift(1)).abs()))
+    df = df.with_columns(TR=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
+    df = df.with_columns(pl.Series("_ATR", df["TR"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize ATR indicator
-    df['ATR'] = df['_ATR'] / df['median']
+    df = df.with_columns(pl.Series("ATR", df["_ATR"] / df["median"]))
 
-    df[factor_name] = df['RC_mean'] * df['BBW_mean'] * df['ATR']
+    df = df.with_columns(pl.Series(factor_name, df["RC_mean"] * df["BBW_mean"] * df["ATR"]))
     # delete extra columns
-    del df['RC'], df['RC_mean'], df['median']
-    del df['std'], df['z_score'], df['m']
-    del df['BBW'], df['BBW_mean'], df['c1']
-    del df['c2'], df['c3'], df['TR'], df['_ATR']
-    del df['ATR']
+    df = df.drop(["RC", "RC_mean", "median"])
+    df = df.drop(["std", "z_score", "m"])
+    df = df.drop(["BBW", "BBW_mean", "c1"])
+    df = df.drop(["c2", "c3", "TR", "_ATR"])
+    df = df.drop("ATR")
 
     return df

@@ -1,14 +1,15 @@
-def signal(*args):
-    # Clv indicator
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
+    # Clv indicator
     # CLV=(2*CLOSE-LOW-HIGH)/(HIGH-LOW)
-    df['CLV'] = (2 * df['close'] - df['low'] - df['high']) / (df['high'] - df['low'])
-    df[factor_name] = df['CLV'].rolling(n, min_periods=1).mean()  # CLVMA=MA(CLV,N)
+    df = df.with_columns(pl.Series("CLV", (2 * df["close"] - df["low"] - df["high"]) / (df["high"] - df["low"])))
+    df = df.with_columns(
+        pl.Series(factor_name, df["CLV"].rolling_mean(n, min_samples=config.min_periods))
+    )  # CLVMA=MA(CLV,N)
 
     # delete extra columns
-    del df['CLV']
+    df = df.drop("CLV")
 
     return df

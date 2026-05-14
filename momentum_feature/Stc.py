@@ -1,7 +1,50 @@
 import numpy as np
+import polars as pl
 
 
-def signal(*args):
+def _rolling_mean_np(arr, n, min_periods):
+    a = np.asarray(arr, dtype=float)
+    out = np.full(len(a), np.nan)
+    min_p = min_periods or 1
+    for i in range(len(a)):
+        start = max(0, i - n + 1)
+        w = a[start : i + 1]
+        valid = w[~np.isnan(w)]
+        if len(valid) < min_p:
+            continue
+        out[i] = valid.mean()
+    return out
+
+
+def _rolling_min_np(arr, n, min_periods):
+    a = np.asarray(arr, dtype=float)
+    out = np.full(len(a), np.nan)
+    min_p = min_periods or 1
+    for i in range(len(a)):
+        start = max(0, i - n + 1)
+        w = a[start : i + 1]
+        valid = w[~np.isnan(w)]
+        if len(valid) < min_p:
+            continue
+        out[i] = valid.min()
+    return out
+
+
+def _rolling_max_np(arr, n, min_periods):
+    a = np.asarray(arr, dtype=float)
+    out = np.full(len(a), np.nan)
+    min_p = min_periods or 1
+    for i in range(len(a)):
+        start = max(0, i - n + 1)
+        w = a[start : i + 1]
+        valid = w[~np.isnan(w)]
+        if len(valid) < min_p:
+            continue
+        out[i] = valid.max()
+    return out
+
+
+def signal(df, n, factor_name, config):
     # STC indicator
     """
     N1=23
@@ -23,36 +66,29 @@ def signal(*args):
     A buy signal is generated when STC crosses above 25;
     a sell signal is generated when STC crosses below 75.
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
     N1 = n
     N2 = int(N1 * 1.5)  # approximate value
     N = 2 * n
-    df['ema1'] = df['close'].ewm(N1, adjust=False).mean()
-    df['ema2'] = df['close'].ewm(N, adjust=False).mean()
-    df['MACDX'] = df['ema1'] - df['ema2']
-    df['V1'] = df['MACDX'].rolling(N2, min_periods=1).min()
-    df['V2'] = df['MACDX'].rolling(N2, min_periods=1).max()- df['V1']
-    df['FK'] = (df['MACDX'] - df['V1']) / df['V2'] * 100
-    df['FK'] = np.where(df['V2'] > 0, (df['MACDX'] - df['V1']) / df['V2'] * 100, df['FK'].shift(1))
-    df['FD'] = df['FK'].rolling(N2, min_periods=1).mean()
-    df['V3'] = df['FD'].rolling(N2, min_periods=1).min()
-    df['V4'] = df['FD'].rolling(N2, min_periods=1).max() - df['V3']
-    df['SK'] = (df['FD'] - df['V3']) / df['V4'] * 100
-    df['SK'] = np.where(df['V4'] > 0, (df['FD'] - df['V3']) / df['V4'] * 100, df['SK'].shift(1))
-    df[factor_name] = df['SK'].rolling(N1, min_periods=1).mean()
-
-    del df['ema1']
-    del df['ema2']
-    del df['MACDX']
-    del df['V1']
-    del df['V2']
-    del df['V3']
-    del df['V4']
-    del df['FK']
-    del df['FD']
-    del df['SK']
-
+    # Numerical sensitivity note:
+    # STC stacks EMA, rolling min/max, and recursive fallback (REF(previous FK/SK)).
+    # Tiny floating-point differences can therefore accumulate into small output drift,
+    # even when the overall shape is matched between pandas and polars.
+    ema1 = df["close"].ewm_mean(span=N1, adjust=config.ewm_adjust).to_numpy()
+    ema2 = df["close"].ewm_mean(span=N, adjust=config.ewm_adjust).to_numpy()
+    macdx = ema1 - ema2
+    v1 = _rolling_min_np(macdx, N2, config.min_periods)
+    v2 = _rolling_max_np(macdx, N2, config.min_periods) - v1
+    fk_base = (macdx - v1) / v2 * 100
+    fk_prev = np.roll(fk_base, 1)
+    fk_prev[0] = np.nan
+    fk = np.where(v2 > 0, fk_base, fk_prev)
+    fd = _rolling_mean_np(fk, N2, config.min_periods)
+    v3 = _rolling_min_np(fd, N2, config.min_periods)
+    v4 = _rolling_max_np(fd, N2, config.min_periods) - v3
+    sk_base = (fd - v3) / v4 * 100
+    sk_prev = np.roll(sk_base, 1)
+    sk_prev[0] = np.nan
+    sk = np.where(v4 > 0, sk_base, sk_prev)
+    stc = _rolling_mean_np(sk, N1, config.min_periods)
+    df = df.with_columns(pl.Series(factor_name, stc))
     return df

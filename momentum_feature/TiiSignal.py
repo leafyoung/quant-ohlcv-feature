@@ -1,19 +1,10 @@
 import numpy as np
-import pandas as pd
+import polars as pl
+
+from helpers import scale_zscore
 
 
-# ===== function: zscore normalization
-def scale_zscore(_s, _n):
-    _s = (pd.Series(_s) - pd.Series(_s).rolling(_n, min_periods=1).mean()
-          ) / pd.Series(_s).rolling(_n, min_periods=1).std()
-    return pd.Series(_s)
-
-
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
+def signal(df, n, factor_name, config):
     # ******************** TII ********************
     # N1=40
     # M=[N1/2]+1
@@ -30,15 +21,17 @@ def signal(*args):
     # TII can be used to reflect the price trend and trend strength. Generally, TII>80 (<20) indicates a strong uptrend (downtrend).
     # There are several ways to generate trading signals with TII: cross above 20 to buy, cross below 80 to sell (as a reversal indicator); cross above 50 to buy, cross below 50 to sell;
     # cross above signal line to buy, cross below signal line to sell. If TII crosses above TII_SIGNAL, a buy signal is generated; if TII crosses below TII_SIGNAL, a sell signal is generated.
-    close_ma = df['close'].rolling(n, min_periods=1).mean()
-    dev = df['close'] - close_ma
+    close_ma = df["close"].rolling_mean(n, min_samples=config.min_periods)
+    dev = df["close"] - close_ma
     devpos = np.where(dev > 0, dev, 0)
+    devpos = pl.Series(devpos).fill_nan(None)
     devneg = np.where(dev < 0, -dev, 0)
-    sumpos = pd.Series(devpos).rolling(int(1 + n / 2), min_periods=1).sum()
-    sumneg = pd.Series(devneg).rolling(int(1 + n / 2), min_periods=1).sum()
+    devneg = pl.Series(devneg).fill_nan(None)
+    sumpos = pl.Series(devpos).rolling_sum(int(1 + n / 2), min_samples=config.min_periods)
+    sumneg = pl.Series(devneg).rolling_sum(int(1 + n / 2), min_samples=config.min_periods)
 
     tii = 100 * sumpos / (sumpos + sumneg)
-    tii_signal = pd.Series(tii).ewm(span=int(n / 2), adjust=False, min_periods=1).mean()
-    df[factor_name] = scale_zscore(tii_signal, n)
+    tii_signal = pl.Series(tii).ewm_mean(span=int(n / 2), adjust=config.ewm_adjust)
+    df = df.with_columns(pl.Series(factor_name, scale_zscore(tii_signal, n, config=config)))
 
     return df

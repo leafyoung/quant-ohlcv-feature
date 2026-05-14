@@ -1,4 +1,7 @@
-def signal(*args):
+import polars as pl
+
+
+def signal(df, n, factor_name, config):
     # POS indicator
     """
     N=100
@@ -9,14 +12,10 @@ def signal(*args):
     a sell signal is generated when POS crosses below 20.
 
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
-
-    ref = df['close'].shift(n)
-    price = (df['close'] - ref) / ref
-    min_price = price.rolling(n).min()
-    max_price = price.rolling(n).max()
-    df[factor_name] = (price - min_price) / (max_price - min_price)
+    ref = df["close"].shift(n)
+    price = (df["close"] - ref) / ref
+    min_price = price.rolling_min(n, min_samples=config.min_periods)
+    max_price = price.rolling_max(n, min_samples=config.min_periods)
+    df = df.with_columns(pl.Series(factor_name, (price - min_price) / (max_price - min_price)))
 
     return df

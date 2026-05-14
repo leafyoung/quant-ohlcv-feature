@@ -1,8 +1,7 @@
-def signal(*args):
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+import polars as pl
 
+
+def signal(df, n, factor_name, config):
     # MICD indicator
     """
     N=20
@@ -16,20 +15,22 @@ def signal(*args):
     A buy signal is generated when MICD crosses above 0;
     a sell signal is generated when MICD crosses below 0.
     """
-    df['MI'] = df['close'] - df['close'].shift(1)
-    df['MIMMA'] = df['MI'].rolling(n, min_periods=1).mean()
-    df['MIMMA_MA1'] = df['MIMMA'].shift(1).rolling(n, min_periods=1).mean()
-    df['MIMMA_MA2'] = df['MIMMA'].shift(1).rolling(2 *n, min_periods=1).mean()
-    df['DIF'] = df['MIMMA_MA1'] - df['MIMMA_MA2']
-    df['MICD'] = df['DIF'].rolling(n, min_periods=1).mean()
+    df = df.with_columns(pl.Series("MI", df["close"] - df["close"].shift(1)))
+    df = df.with_columns(pl.Series("MIMMA", df["MI"].rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series("MIMMA_MA1", df["MIMMA"].shift(1).rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(
+        pl.Series("MIMMA_MA2", df["MIMMA"].shift(1).rolling_mean(2 * n, min_samples=config.min_periods))
+    )
+    df = df.with_columns(pl.Series("DIF", df["MIMMA_MA1"] - df["MIMMA_MA2"]))
+    df = df.with_columns(pl.Series("MICD", df["DIF"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize
-    df[factor_name] = df['DIF'] / df['MICD']
+    df = df.with_columns(pl.Series(factor_name, df["DIF"] / df["MICD"]))
 
-    del df['MI']
-    del df['MIMMA']
-    del df['MIMMA_MA1']
-    del df['MIMMA_MA2']
-    del df['DIF']
-    del df['MICD']
+    df = df.drop("MI")
+    df = df.drop("MIMMA")
+    df = df.drop("MIMMA_MA1")
+    df = df.drop("MIMMA_MA2")
+    df = df.drop("DIF")
+    df = df.drop("MICD")
 
     return df

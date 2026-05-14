@@ -1,7 +1,8 @@
 import numpy as np
+import polars as pl
 
 
-def signal(*args):
+def signal(df, n, factor_name, config):
     # PVI indicator
     """
     N=40
@@ -15,17 +16,15 @@ def signal(*args):
     A buy signal is generated when PVI crosses above PVI_MA;
     a sell signal is generated when PVI crosses below PVI_MA.
     """
-    df = args[0]
-    n = args[1]
-    factor_name = args[2]
+    df = df.with_columns(pl.Series("ref_close", (df["close"] - df["close"].shift(1)) / df["close"]))
+    df = df.with_columns(
+        pl.Series("PVI_INC", np.where(df["volume"] > df["volume"].shift(1), df["ref_close"], 0)).fill_nan(None)
+    )
+    df = df.with_columns(pl.Series("PVI", df["PVI_INC"].cum_sum()))
+    df = df.with_columns(pl.Series(factor_name, df["PVI"].rolling_mean(n, min_samples=config.min_periods)))
 
-    df['ref_close'] = (df['close'] - df['close'].shift(1)) / df['close']
-    df['PVI_INC'] = np.where(df['volume'] > df['volume'].shift(1), df['ref_close'], 0)
-    df['PVI'] = df['PVI_INC'].cumsum()
-    df[factor_name] = df['PVI'].rolling(n, min_periods=1).mean()
-
-    del df['ref_close']
-    del df['PVI_INC']
-    del df['PVI']
+    df = df.drop("ref_close")
+    df = df.drop("PVI_INC")
+    df = df.drop("PVI")
 
     return df
