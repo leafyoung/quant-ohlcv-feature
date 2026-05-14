@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compare two result files from run_suite.py.
+Compare two result files from run_suite_parallel.py.
 
 Usage:
     python tests/compare.py tests/results/results_pandas_master.csv tests/results/results_polars_uv-polars.csv
@@ -218,11 +218,11 @@ def main():
     if len(sys.argv) < 3:
         print(f"Usage: python {sys.argv[0]} <results_a.csv> <results_b.csv>")
         print()
-        print("Compare two result files produced by run_suite.py.")
+        print("Compare two result files produced by run_suite_parallel.py.")
         print("Typical workflow:")
-        print("  1. On pandas branch:  python tests/run_suite.py")
-        print("  2. On polars branch:  python tests/run_suite.py")
-        print("  3. Compare:           python tests/compare.py <file_a> <file_b>")
+        print("  1. python tests/run_suite_parallel.py --impl polars --output polars.csv")
+        print("  2. python tests/run_suite_parallel.py --impl pandas --output pandas.csv")
+        print("  3. python tests/compare.py polars.csv pandas.csv")
         sys.exit(1)
 
     rc = compare(sys.argv[1], sys.argv[2])
