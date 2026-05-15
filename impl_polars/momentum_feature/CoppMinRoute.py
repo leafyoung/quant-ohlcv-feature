@@ -9,7 +9,6 @@ def signal(df, n, factor_name, config):
     #          result = COPP / EMA(MIN_ROUTE, N)
     # Divides the Coppock momentum signal by the smoothed intraday price path length (normalized by open).
     # Adjusts momentum for the efficiency of intraday price movement — shorter paths = cleaner momentum.
-    eps = config.eps
     df = df.with_columns(
         pl.Series("route_1", (df["high"] - df["open"]) + (df["high"] - df["low"]) + (df["close"] - df["low"]))
     )
@@ -24,6 +23,6 @@ def signal(df, n, factor_name, config):
     )
     df = df.with_columns(pl.Series("RC", df["RC"].ewm_mean(span=n, adjust=config.ewm_adjust)))
     df = df.with_columns(pl.Series("min_route", df["min_route"].ewm_mean(span=n, adjust=config.ewm_adjust)))
-    df = df.with_columns(pl.Series(factor_name, df["RC"] / (df["min_route"] + eps)))
+    df = df.with_columns(pl.Series(factor_name, df["RC"] / (df["min_route"] + config.eps)))
 
     return df

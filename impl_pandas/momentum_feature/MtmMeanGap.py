@@ -1,5 +1,4 @@
 def signal(df, n, factor_name, config):
-    eps = config.eps
     # MtmMeanGap indicator (MTM mean / gap factor)
     # Formula: MTM = CLOSE/REF(CLOSE,N)-1; GAP = MA(1 - |CLOSE-OPEN|/(HIGH-LOW), N)
     #          result = MA(MTM, N) / GAP
@@ -7,9 +6,9 @@ def signal(df, n, factor_name, config):
     # Dividing momentum mean by GAP boosts signal when candles show clear directional intent.
     df["mtm"] = df["close"] / (df["close"].shift(n) + config.eps) - 1
 
-    df["_g"] = 1 - abs((df["close"] - df["open"]) / (df["high"] - df["low"] + eps))
+    df["_g"] = 1 - abs((df["close"] - df["open"]) / (df["high"] - df["low"] + config.eps))
     df["gap"] = df["_g"].rolling(window=n, min_periods=config.min_periods).mean()
 
-    df[factor_name] = df["mtm"].rolling(window=n, min_periods=config.min_periods).mean() / (df["gap"] + eps)
+    df[factor_name] = df["mtm"].rolling(window=n, min_periods=config.min_periods).mean() / (df["gap"] + config.eps)
 
     return df

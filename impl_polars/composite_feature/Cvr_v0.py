@@ -2,7 +2,6 @@ import polars as pl
 
 
 def signal(df, n, factor_name, config):
-    eps = config.eps
     # Cvr_v0 indicator (Calmar-Volume Ratio)
     # Formula: CVR = (SUM(PCT_CHANGE, N) / STD(PCT_CHANGE, N)) * (QUOTE_VOLUME / MA(QUOTE_VOLUME, N))
     #          result = MA(CVR, N)
@@ -14,7 +13,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(
         pl.Series(
             "cvr",
-            (df["ret"] / (df["vol"] + eps))
+            (df["ret"] / (df["vol"] + config.eps))
             * (df["quote_volume"] / df["quote_volume"].rolling_mean(n, min_samples=config.min_periods)),
         )
     )

@@ -16,15 +16,15 @@ def signal(df, n, factor_name, config):
     df["XR"] = df["close"] - df["TL"]
     df["XRM"] = (
         df["XR"].rolling(M, min_periods=config.min_periods).sum()
-        / df["TR"].rolling(M, min_periods=config.min_periods).sum() + config.eps
+        / (df["TR"].rolling(M, min_periods=config.min_periods).sum() + config.eps)
     )
     df["XRN"] = (
         df["XR"].rolling(N, min_periods=config.min_periods).sum()
-        / df["TR"].rolling(N, min_periods=config.min_periods).sum() + config.eps
+        / (df["TR"].rolling(N, min_periods=config.min_periods).sum() + config.eps)
     )
     df["XRO"] = (
         df["XR"].rolling(O, min_periods=config.min_periods).sum()
-        / df["TR"].rolling(O, min_periods=config.min_periods).sum() + config.eps
+        / (df["TR"].rolling(O, min_periods=config.min_periods).sum() + config.eps)
     )
     df[factor_name] = 100 * (df["XRM"] * N * O + df["XRN"] * M * O + df["XRO"] * M * N) / (M * N + M * O + N * O)
 

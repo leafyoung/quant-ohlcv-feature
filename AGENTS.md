@@ -152,7 +152,7 @@ model = LinearRegression().fit(x.reshape(-1, 1), y)
 x = np.arange(m, dtype=float)
 x_mean = (m - 1) / 2.0
 y_mean = y_arr.mean()
-slope = np.dot(x - x_mean, y_arr - y_mean) / (np.dot(x - x_mean, x - x_mean) + eps)
+slope = np.dot(x - x_mean, y_arr - y_mean) / (np.dot(x - x_mean, x - x_mean) + config.eps)
 intercept = y_mean - slope * x_mean
 return slope * (m - 1) + intercept
 ```
@@ -211,7 +211,7 @@ Both impls must pass 187,600/187,600 with zero failures. Cross-impl numerical ma
 
 ## Known Remaining Floating-Point Diffs
 
-As of `fix-review-issues` branch, 361/187,600 cases (0.19%) show small FP differences between pandas and polars in these indicators:
+As of this update, 361/187,600 cases (0.19%) show small FP differences between pandas and polars in these indicators:
 - `ZfAbsMean` (293 diffs, max_rel 1.4e-3) — recursive EMA accumulation
 - `Stc` (17 diffs), `Acs` (10 diffs) — TA-Lib FP boundary
 - `LongMoment`/`ShortMoment` (12 diffs) — higher-moment statistics

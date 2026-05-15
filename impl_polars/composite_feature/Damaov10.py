@@ -8,7 +8,6 @@ def signal(df, n, factor_name, config):
     #          ATR = MA(TR,N) / MA(CLOSE,N)  (normalized ATR)
     #          result = COPP * BBW_mean * ATR
     # Combines momentum (COPP), Bollinger volatility (BBW), and range volatility (ATR) into one composite signal.
-    eps = config.eps
     # COPP
     # RC=100*((CLOSE-REF(CLOSE,N1))/REF(CLOSE,N1)+(CLOSE-REF(CLOSE,N2))/REF(CLOSE,N2))
     df = df.with_columns(
@@ -27,7 +26,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, ddof=config.ddof, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("z_score", (df["close"] - df["median"]).abs() / (df["std"] + config.eps)))
     df = df.with_columns(pl.Series("m", df["z_score"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("BBW", df["std"] * df["m"] * 2 / (df["median"] + eps)))
+    df = df.with_columns(pl.Series("BBW", df["std"] * df["m"] * 2 / (df["median"] + config.eps)))
     df = df.with_columns(pl.Series("BBW_mean", df["BBW"].rolling_mean(n, min_samples=config.min_periods)))
     # ATR
     df = df.with_columns(pl.Series("c1", df["high"] - df["low"]))
