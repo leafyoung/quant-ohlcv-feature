@@ -35,6 +35,20 @@ result = numerator / (denominator + config.eps)
 
 ## Numerical Safety Rules
 
+### 0. Use `config.eps` directly — never alias to bare `eps`
+
+Do not create local aliases like `eps = config.eps`. Use `config.eps` directly at every use site.
+This ensures grep-ability and prevents inconsistency when a file is partially migrated.
+
+```python
+# ✗ WRONG — local alias obscures the source of eps
+    eps = config.eps
+    df["result"] = numerator / (denominator + eps)
+
+# ✓ CORRECT — use config.eps directly
+    df["result"] = numerator / (denominator + config.eps)
+```
+
 ### 1. Protect every computed denominator with `+ config.eps`
 
 Any division by a column that is not raw OHLCV (i.e. a rolling stat, a shifted value, or an intermediate calculation) **must** add `config.eps` to the denominator.
@@ -105,9 +119,22 @@ df["price_ch"] = 2 * (df["price"] - df["min_low"]) / (df["max_high"] - df["low"]
 df["price_ch"] = 2 * (df["price"] - df["min_low"]) / (df["max_high"] - df["min_low"] + config.eps) - 0.5
 ```
 
-### 3. Use `config.normalize_eps` for pct_change denominator guards
+### 3. Never use `pct_change()` — implement manual return with `config.eps`
 
-When implementing custom pct_change with a denominator floor:
+`pct_change()` does not protect against division by zero when the shifted price is zero.
+Always implement returns manually with `+ config.eps` on the shifted close:
+
+```python
+# ✗ WRONG — no division-by-zero protection
+df["ret"] = df["close"].pct_change(n)
+df["ret"] = df["close"].pct_change()
+
+# ✓ CORRECT — manual with config.eps
+df["ret"] = df["close"] / (df["close"].shift(n) + config.eps) - 1
+df["ret"] = df["close"] / (df["close"].shift(1) + config.eps) - 1
+```
+
+When implementing custom pct_change with a denominator floor for comparison thresholds:
 
 ```python
 # ✗ WRONG — hardcoded epsilon
@@ -117,7 +144,23 @@ df[factor_name] = (grid_arr - prev) / np.where(np.abs(prev) > 1e-9, prev, np.nan
 df[factor_name] = (grid_arr - prev) / np.where(np.abs(prev) > config.normalize_eps, prev, np.nan)
 ```
 
-### 4. Never use `inplace=True` on pandas operations
+### 4. `+ config.eps` must be inside the denominator parentheses
+
+Due to operator precedence, `+ config.eps` placed after the closing parenthesis of the
+denominator adds to the **result** of the division, not the denominator itself — making
+the guard a no-op.
+
+```python
+# ✗ WRONG — eps is outside the denominator; no division-by-zero protection
+df["XRM"] = df["XR"].rolling(n).sum() / df["TR"].rolling(n).sum() + config.eps
+
+# ✓ CORRECT — eps is inside the denominator
+df["XRM"] = df["XR"].rolling(n).sum() / (df["TR"].rolling(n).sum() + config.eps)
+```
+
+When in doubt, wrap the entire denominator in an extra pair of parentheses.
+
+### 5. Never use `inplace=True` on pandas operations
 
 In-place mutations on DataFrame columns can corrupt the caller's data.
 
@@ -139,7 +182,24 @@ df = df.drop(columns=[...])       # pandas
 df = df.drop(["col1", "col2"])    # polars
 ```
 
-### 5. Use closed-form OLS instead of sklearn for rolling regression
+### 6. Use standard True Range (TR) with previous close
+
+The True Range must use the **previous** bar's close (`close.shift(1)`), not the current
+bar's close. This is the standard Wilder definition used in ATR, ADX, and related indicators.
+
+```python
+# ✗ WRONG — uses current close
+df["c2"] = abs(df["high"] - df["close"])
+df["c3"] = abs(df["low"] - df["close"])
+
+# ✓ CORRECT — uses previous close (standard Wilder TR)
+df["c1"] = df["high"] - df["low"]
+df["c2"] = abs(df["high"] - df["close"].shift(1))
+df["c3"] = abs(df["low"] - df["close"].shift(1))
+df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)
+```
+
+### 7. Use closed-form OLS instead of sklearn for rolling regression
 
 Never import `sklearn.linear_model.LinearRegression` inside indicator files. It allocates an object per rolling window, triggers SVD, and can fail to converge on short windows.
 
@@ -157,7 +217,7 @@ intercept = y_mean - slope * x_mean
 return slope * (m - 1) + intercept
 ```
 
-### 6. Use identical algorithms in both impls for cross-impl numerical match
+### 8. Use identical algorithms in both impls for cross-impl numerical match
 
 When optimizing a computation (e.g. replacing a while loop), apply the **same algorithm** in both `impl_pandas/` and `impl_polars/`. Different algorithms (e.g. `rolling().rank()` in pandas vs numpy loop in polars) produce different numerics and defeat the cross-impl comparison test.
 
@@ -191,6 +251,36 @@ df["col"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof)
 - Use `fill_null(0)` only when intentional (early zero-fill before division is dangerous — prefer `fill_nan(None)`).
 - `np.where()` on polars Series produces NaN (not null); always chain `.fill_nan(None)`.
 
+## RSI-style ratio patterns need eps
+
+When computing an RSI or similar ratio of the form `a / (a + b)`, the denominator is a
+computed sum that can be zero:
+
+```python
+# ✗ WRONG — (a + b) can be zero
+df["rsi"] = a / (a + b) * 100
+
+# ✓ CORRECT
+df["rsi"] = a / (a + b + config.eps) * 100
+```
+
+This applies to any indicator that divides by a sum of positive/negative components:
+RSI, Imi, Do, Demaker, Bbw, etc.
+
+## Conditional division — prefer `+ config.eps` over `np.where` guards
+
+When a denominator can be zero, prefer adding `+ config.eps` over using `np.where` to
+conditionally avoid the division. The `+ config.eps` pattern is simpler, more consistent,
+and avoids the need to decide what value to produce when the denominator is zero.
+
+```python
+# ✗ INCONSISTENT — np.where guard produces a different value at zero
+df[factor_name] = np.where(df["path_shortest"] == 0, 0, df["quote_volume"] / df["path_shortest"])
+
+# ✓ CORRECT — uniform + config.eps pattern
+df[factor_name] = df["quote_volume"] / (df["path_shortest"] + config.eps)
+```
+
 ## File Structure
 
 Every indicator file must:
@@ -211,7 +301,7 @@ Both impls must pass 187,600/187,600 with zero failures. Cross-impl numerical ma
 
 ## Known Remaining Floating-Point Diffs
 
-As of this update, 361/187,600 cases (0.19%) show small FP differences between pandas and polars in these indicators:
+As of this update, 357/187,600 cases (0.19%) show small FP differences between pandas and polars in these indicators:
 - `ZfAbsMean` (293 diffs, max_rel 1.4e-3) — recursive EMA accumulation
 - `Stc` (17 diffs), `Acs` (10 diffs) — TA-Lib FP boundary
 - `LongMoment`/`ShortMoment` (12 diffs) — higher-moment statistics
