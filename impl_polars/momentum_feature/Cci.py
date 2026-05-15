@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # CCI - most commonly used T indicator
-    eps = config.eps
     """
     N=14
     TP=(HIGH+LOW+CLOSE)/3
@@ -20,7 +19,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("ma", df["tp"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("md", abs(df["tp"] - df["ma"]).rolling_mean(n, min_samples=config.min_periods)))
 
-    df = df.with_columns(pl.Series(factor_name, (df["tp"] - df["ma"]) / (df["md"] * 0.015 + eps)))
+    df = df.with_columns(pl.Series(factor_name, (df["tp"] - df["ma"]) / (df["md"] * 0.015 + config.eps)))
 
     df = df.drop("tp")
     df = df.drop("ma")

@@ -12,15 +12,15 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, ddof=config.ddof, min_samples=config.min_periods)))
 
     # close price momentum
-    df = df.with_columns(pl.Series("mtm", df["close"] / df["close"].shift(n) - 1))
+    df = df.with_columns(pl.Series("mtm", df["close"] / (df["close"].shift(n) + config.eps) - 1))
     df = df.with_columns(pl.Series("mtm", df["mtm"].rolling_mean(n, min_samples=config.min_periods)))
 
     # standard deviation momentum
-    df = df.with_columns(pl.Series("s_mtm", df["std"] / df["std"].shift(n) - 1))
+    df = df.with_columns(pl.Series("s_mtm", df["std"] / (df["std"] + config.eps).shift(n) - 1))
     df = df.with_columns(pl.Series("s_mtm", df["s_mtm"].rolling_mean(n, min_samples=config.min_periods)))
 
     # bbw volatility
-    df = df.with_columns(pl.Series("bbw", df["std"] / df["ma"]))
+    df = df.with_columns(pl.Series("bbw", df["std"] / (df["ma"] + config.eps)))
     df = df.with_columns(pl.Series("bbw_mean", df["bbw"].rolling_mean(n, min_samples=config.min_periods)))
 
     # taker_buy_quote_asset_volume volatility
@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
         pl.Series(
             "volatility",
             df["taker_buy_quote_asset_volume"].rolling_sum(n, min_samples=config.min_periods)
-            / df["taker_buy_quote_asset_volume"].rolling_sum(int(0.5 * n), min_samples=config.min_periods),
+            / (df["taker_buy_quote_asset_volume"].rolling_sum(int(0.5 * n), min_samples=config.min_periods) + config.eps),
         )
     )
 

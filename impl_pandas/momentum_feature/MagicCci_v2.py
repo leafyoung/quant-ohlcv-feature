@@ -14,7 +14,7 @@ def signal(df, n, factor_name, config):
     df["abs_diff_close"] = abs(df["tp"] - df["ma"])
     df["md"] = df["abs_diff_close"].ewm(span=n, adjust=config.ewm_adjust).mean()
 
-    df[factor_name] = (df["tp"] - df["ma"]) / df["md"]
+    df[factor_name] = (df["tp"] - df["ma"]) / (df["md"] + config.eps)
 
     # # delete intermediate data
     # del df['oma']

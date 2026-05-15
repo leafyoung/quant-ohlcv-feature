@@ -15,7 +15,7 @@ def signal(df, n, factor_name, config):
     s = (
         100
         * pd.Series(_h).rolling(n, min_periods=config.min_periods).sum()
-        / (config.normalize_eps + pd.Series(_l).rolling(n, min_periods=config.min_periods).sum())
+        / (config.eps + pd.Series(_l).rolling(n, min_periods=config.min_periods).sum())
     )
     df[factor_name] = pd.Series(s)
 

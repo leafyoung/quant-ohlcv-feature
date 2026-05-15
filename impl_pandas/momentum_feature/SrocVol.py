@@ -6,7 +6,7 @@ def signal(df, n, factor_name, config):
     # EMAP=EMA(VOLUME,N)
     df["emap"] = df["volume"].ewm(span=2 * n, adjust=config.ewm_adjust).mean()
     # SROCVOL=(EMAP-REF(EMAP,M))/REF(EMAP,M)
-    df[factor_name] = (df["emap"] - df["emap"].shift(n)) / df["emap"].shift(n)
+    df[factor_name] = (df["emap"] - df["emap"].shift(n)) / (df["emap"].shift(n) + config.eps)
 
     del df["emap"]
 

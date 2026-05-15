@@ -32,7 +32,7 @@ def signal(df, n, factor_name, config):
     df["span_B"] = (df["max_high_3"] + df["min_low_3"]) / 2
 
     # normalize/remove dimensionality
-    df[factor_name] = df["span_A"] / df["span_B"]
+    df[factor_name] = df["span_A"] / (df["span_B"] + config.eps)
 
     del df["max_high_1"]
     del df["max_high_2"]

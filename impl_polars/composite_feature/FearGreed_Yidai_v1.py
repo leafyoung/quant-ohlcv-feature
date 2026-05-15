@@ -32,7 +32,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("c3", (df["low"] - df["close"].shift(1)).abs()))  # ABS(LOW-REF(CLOSE,1))
     df = df.with_columns(TR=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
     df = df.with_columns(pl.Series("sma", sma(df, column="close", k=n, config=config)))
-    df = df.with_columns(pl.Series("STR", df["TR"] / df["sma"]))
+    df = df.with_columns(pl.Series("STR", df["TR"] / (df["sma"] + config.eps)))
 
     # separate bull/bear amplitude
     df = df.with_columns(pl.Series("trUp", np.where(df["close"] > df["close"].shift(1), df["STR"], 0)).fill_nan(None))
@@ -56,8 +56,6 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series(factor_name, df["fgi"]))
 
     # delete extra columns
-    df = df.drop(["c1", "c2", "c3", "TR", "STR", "sma"])
-    df = df.drop(["trUp", "trDn", "fastDiff", "slowDiff", "FastMinusSlow", "fgi"])
-    df = df.drop(["wmatrUp1", "wmatrDn1", "wmatrUp2", "wmatrDn2"])
+    df = df.drop(["c1", "c2", "c3", "TR", "STR", "sma", "trUp", "trDn", "fastDiff", "slowDiff", "FastMinusSlow", "fgi", "wmatrUp1", "wmatrDn1", "wmatrUp2", "wmatrDn2"])
 
     return df

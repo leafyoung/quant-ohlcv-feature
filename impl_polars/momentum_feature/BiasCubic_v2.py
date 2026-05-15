@@ -12,9 +12,9 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("ma_1", df["close"].rolling_mean(int(n / 2), min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("ma_2", df["close"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("ma_3", df["close"].rolling_mean(n * 2, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("bias_1", (df["close"] / df["ma_1"] - 1)))
-    df = df.with_columns(pl.Series("bias_2", (df["close"] / df["ma_2"] - 1)))
-    df = df.with_columns(pl.Series("bias_3", (df["close"] / df["ma_3"] - 1)))
+    df = df.with_columns(pl.Series("bias_1", (df["close"] / (df["ma_1"] + config.eps) - 1)))
+    df = df.with_columns(pl.Series("bias_2", (df["close"] / (df["ma_2"] + config.eps) - 1)))
+    df = df.with_columns(pl.Series("bias_3", (df["close"] / (df["ma_3"] + config.eps) - 1)))
 
     df = df.with_columns(
         pl.Series(

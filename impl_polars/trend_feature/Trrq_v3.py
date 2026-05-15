@@ -8,10 +8,9 @@ def signal(df, n, factor_name, config):
     # Formula: TP = (HIGH+LOW+CLOSE)/3; NORM_VOL = QUOTE_VOLUME / MA(QUOTE_VOLUME,N)
     #          REG = LINEARREG(TP,N); REG_CHG = REG.pct_change(N)
     #          SUM_CHG = SUM(REG_CHG,N); SUM_VOL = SUM(NORM_VOL,N)
-    #          result = SUM_CHG / (SUM_VOL + eps)  if SUM_CHG > 0 (low-volume uptrend rewarded)
+    #          result = SUM_CHG / (SUM_VOL + config.eps)  if SUM_CHG > 0 (low-volume uptrend rewarded)
     #                 = SUM_CHG * SUM_VOL           if SUM_CHG <= 0 (high-volume downtrend penalized)
     # Asymmetric treatment: rewards low-volume uptrends and penalizes high-volume downtrends.
-    eps = config.eps
     df = df.with_columns(pl.Series("tp", (df["high"] + df["low"] + df["close"]) / 3))
     df = df.with_columns(
         pl.Series(
@@ -35,7 +34,7 @@ def signal(df, n, factor_name, config):
             np.where(
                 df["tp_reg_price_change_sum"] > 0,
                 df["tp_reg_price_change_sum"]
-                / (eps + df["normalized_quote_volume_sum"]),  # if rising, consistent with low-volume uptrend
+                / (config.eps + df["normalized_quote_volume_sum"]),  # if rising, consistent with low-volume uptrend
                 df["tp_reg_price_change_sum"] * df["normalized_quote_volume_sum"],
             ),
         )

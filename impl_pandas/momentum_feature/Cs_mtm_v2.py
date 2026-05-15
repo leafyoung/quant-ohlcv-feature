@@ -6,14 +6,14 @@ def signal(df, n, factor_name, config):
     # Combines three rolling momentum signals: price, volatility, and volume.
     # High positive values indicate simultaneous upward trending in price, expanding volatility, and increasing volume.
     # close price momentum
-    df["c_mtm"] = df["close"] / df["close"].shift(n) - 1
+    df["c_mtm"] = df["close"] / (df["close"].shift(n) + config.eps) - 1
     df["c_mtm"] = df["c_mtm"].rolling(n, min_periods=config.min_periods).mean()
     # standard deviation momentum
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-    df["s_mtm"] = df["std"] / df["std"].shift(n)
+    df["s_mtm"] = df["std"] / (df["std"] + config.eps).shift(n)
     df["s_mtm"] = df["s_mtm"].rolling(n, min_periods=config.min_periods).mean()
     # volume change
-    df["v_mtm"] = df["quote_volume"] / df["quote_volume"].shift(n)
+    df["v_mtm"] = df["quote_volume"] / (df["quote_volume"].shift(n) + config.eps)
     df["v_mtm"] = df["v_mtm"].rolling(n, min_periods=config.min_periods).mean()
     df[factor_name] = df["c_mtm"] * df["s_mtm"] * df["v_mtm"]
 

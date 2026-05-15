@@ -12,15 +12,15 @@ def signal(df, n, factor_name, config):
 
     # Copp
     df["RC"] = 100 * (
-        (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
-        + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+        (df["close"] - df["close"].shift(n)) / (df["close"].shift(n) + config.eps)
+        + (df["close"] - df["close"].shift(2 * n)) / (df["close"].shift(2 * n) + config.eps)
     )
     df["RC"] = df["RC"].rolling(n, min_periods=config.min_periods).mean()
 
     # bbw
     df["median"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-    df["bbw"] = df["std"] / df["median"]
+    df["bbw"] = df["std"] / (df["median"] + config.eps)
 
     # corr
     df["corr"] = ta.CORREL(df["close"], df["volume"], n) + 1
@@ -28,6 +28,6 @@ def signal(df, n, factor_name, config):
 
     df[factor_name] = df["RC"] * df["bbw"] * df["corr"]
 
-    del df["RC"], df["median"], df["std"], df["bbw"], df["corr"]
+    df = df.drop(columns=["RC", "median", "std", "bbw", "corr"])
 
     return df

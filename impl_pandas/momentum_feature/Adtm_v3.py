@@ -32,7 +32,7 @@ def signal(df, n, factor_name, config):
     stm = pd.Series(dtm).rolling(n, min_periods=config.min_periods).sum()
     sbm = pd.Series(dbm).rolling(n, min_periods=config.min_periods).sum()
 
-    signal = (stm - sbm) / (config.normalize_eps + pd.Series(stm).combine(pd.Series(sbm), max).values)
+    signal = (stm - sbm) / (config.eps + pd.Series(stm).combine(pd.Series(sbm), max).values)
     signal = df["close"] - signal
     df[factor_name] = scale_01(signal, n, config.normalize_eps, config=config)
 

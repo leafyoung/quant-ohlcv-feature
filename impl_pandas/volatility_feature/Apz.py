@@ -20,7 +20,7 @@ def signal(df, n, factor_name, config):
     df["ema_close"] = df["close"].ewm(span=2 * n, adjust=config.ewm_adjust).mean()
     df["ema_ema_close"] = df["ema_close"].ewm(span=2 * n, adjust=config.ewm_adjust).mean()
     # normalize using EMA
-    df[factor_name] = df["vol"] / df["ema_ema_close"]
+    df[factor_name] = df["vol"] / (df["ema_ema_close"] + config.eps)
 
     del df["hl"]
     del df["ema_hl"]

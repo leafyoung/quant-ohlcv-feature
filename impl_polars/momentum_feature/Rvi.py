@@ -30,7 +30,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("sum_dstd", df["dstd"].rolling_sum(2 * n, min_samples=config.min_periods)))
 
     df = df.with_columns(
-        pl.Series(factor_name, (df["sum_ustd"] / (df["sum_ustd"] + df["sum_dstd"])).fill_nan(None) * 100)
+        pl.Series(factor_name, (df["sum_ustd"] / (df["sum_ustd"] + df["sum_dstd"] + config.eps)).fill_nan(None) * 100)
     )
 
     df = df.drop("std")

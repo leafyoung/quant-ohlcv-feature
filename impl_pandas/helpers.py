@@ -18,15 +18,15 @@ def scale_01(_s, _n, eps, config):
 
 def scale_zscore(_s, _n, config):
     """Z-score normalisation: ``(value - rolling_mean) / rolling_std``."""
-    _s = (pd.Series(_s) - pd.Series(_s).rolling(_n, min_periods=config.min_periods).mean()) / pd.Series(_s).rolling(
-        _n, min_periods=config.min_periods
-    ).std(ddof=config.ddof)
+    _s = (pd.Series(_s) - pd.Series(_s).rolling(_n, min_periods=config.min_periods).mean()) / (
+        pd.Series(_s).rolling(_n, min_periods=config.min_periods).std(ddof=config.ddof) + config.eps
+    )
     return _s
 
 
 def sma_recursive(ser, n, m):
     """Recursive SMA: ``SMA(X,N,M) = M/N*X + (N-M)/N*ref(SMA,1)``."""
-    ser.fillna(value=0, inplace=True)
+    ser = ser.fillna(value=0)
     _l = []
     for i, v in enumerate(ser):
         if i == 0:

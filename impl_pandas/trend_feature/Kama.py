@@ -19,7 +19,6 @@ def signal(df, n, factor_name, config):
     # making KAMA follow price movements closely, reducing its lag; when the current trend is weak (e.g., in an oscillating market), the ER value is small,
     # KAMA assigns less weight to the current price, increasing KAMA's lag, making it smoother and avoiding too many trading signals.
     # Unlike VIDYA, the KAMA indicator can set upper bound FAST and lower bound SLOW for the weight.
-    eps = config.eps
     direction = df["close"] - df["close"].shift(1)
     volatility = df["close"].diff(1).abs().rolling(int(10 * n), min_periods=config.min_periods).sum()
     fast = 2 / (n / 5 + 1)
@@ -31,7 +30,7 @@ def signal(df, n, factor_name, config):
         if i < n:
             _l.append(0)
         else:
-            er = np.divide(d, (v + eps))
+            er = np.divide(d, (v + config.eps))
             smooth = er * (fast - slow) + slow
             cof = smooth * smooth
             _l.append(cof * c + (1 - cof) * _l[-1])

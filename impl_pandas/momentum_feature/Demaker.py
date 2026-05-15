@@ -19,7 +19,7 @@ def signal(df, n, factor_name, config):
     df["Demin"] = np.where(df["Demin"] > 0, df["Demin"], 0)
     df["Demax_ma"] = df["Demax"].rolling(n, min_periods=config.min_periods).mean()
     df["Demin_ma"] = df["Demin"].rolling(n, min_periods=config.min_periods).mean()
-    df[factor_name] = df["Demax_ma"] / (df["Demax_ma"] + df["Demin_ma"])
+    df[factor_name] = df["Demax_ma"] / (df["Demax_ma"] + df["Demin_ma"] + config.eps)
 
     del df["Demax"]
     del df["Demin"]

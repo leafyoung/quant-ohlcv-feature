@@ -15,7 +15,7 @@ def signal(df, n, factor_name, config):
     """
     df = df.with_columns(pl.Series("co", df["close"] - df["open"]))
     df = df.with_columns(pl.Series("hl", df["high"] - df["low"]))
-    df = df.with_columns(pl.Series(factor_name, (df["co"] / df["hl"]).rolling_mean(n, min_samples=config.min_periods)))
+    df = df.with_columns(pl.Series(factor_name, (df["co"] / (df["hl"] + config.eps)).rolling_mean(n, min_samples=config.min_periods)))
 
     df = df.drop("co")
     df = df.drop("hl")

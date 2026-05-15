@@ -3,7 +3,6 @@ import polars as pl
 
 
 def signal(df, n, factor_name, config):
-    eps = config.eps
     #  WAD indicator
     """
     TRH=MAX(HIGH,REF(CLOSE,1))
@@ -31,7 +30,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("WAD", df["AD"].cum_sum()))
     df = df.with_columns(pl.Series("WADMA", df["WAD"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize
-    df = df.with_columns(pl.Series(factor_name, df["WAD"] / (df["WADMA"] + eps)))
+    df = df.with_columns(pl.Series(factor_name, df["WAD"] / (df["WADMA"] + config.eps)))
 
     df = df.drop("ref_close")
     df = df.drop(["TRH", "TRL"])

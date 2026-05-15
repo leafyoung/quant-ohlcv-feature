@@ -17,8 +17,8 @@ def signal(df, n, factor_name, config):
     """
 
     df = df.with_columns(pl.Series("ema", df["close"].ewm_mean(span=n, adjust=config.ewm_adjust)))
-    df = df.with_columns(pl.Series("BullPower", (df["high"] - df["ema"]) / df["ema"]))
-    df = df.with_columns(pl.Series("BearPower", (df["low"] - df["ema"]) / df["ema"]))
+    df = df.with_columns(pl.Series("BullPower", (df["high"] - df["ema"]) / (df["ema"] + config.eps)))
+    df = df.with_columns(pl.Series("BearPower", (df["low"] - df["ema"]) / (df["ema"] + config.eps)))
     df = df.with_columns(pl.Series(factor_name, df["BullPower"] + df["BearPower"]))
 
     # delete extra columns

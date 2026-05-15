@@ -10,7 +10,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("ma", df["close"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("mafast", df["close"].rolling_mean(int(n / 2), min_samples=config.min_periods)))
     df = df.with_columns(
-        pl.Series(factor_name, (df["mafast"] / df["ma"] - 1).rolling_mean(n, min_samples=config.min_periods))
+        pl.Series(factor_name, (df["mafast"] / (df["ma"] + config.eps) - 1).rolling_mean(n, min_samples=config.min_periods))
     )
 
     df = df.drop(["ma", "mafast"])

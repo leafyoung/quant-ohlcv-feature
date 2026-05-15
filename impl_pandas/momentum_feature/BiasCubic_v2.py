@@ -9,17 +9,17 @@ def signal(df, n, factor_name, config):
     df["ma_1"] = df["close"].rolling(int(n / 2), min_periods=config.min_periods).mean()
     df["ma_2"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["ma_3"] = df["close"].rolling(n * 2, min_periods=config.min_periods).mean()
-    df["bias_1"] = df["close"] / df["ma_1"] - 1
-    df["bias_2"] = df["close"] / df["ma_2"] - 1
-    df["bias_3"] = df["close"] / df["ma_3"] - 1
+    df["bias_1"] = df["close"] / (df["ma_1"] + config.eps) - 1
+    df["bias_2"] = df["close"] / (df["ma_2"] + config.eps) - 1
+    df["bias_3"] = df["close"] / (df["ma_3"] + config.eps) - 1
 
     df["mtm"] = (
         (df["bias_1"] * df["bias_2"] * df["bias_3"])
         * df["quote_volume"]
-        / df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
+        / (df["quote_volume"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
     )
     df[factor_name] = df["mtm"].rolling(n, min_periods=config.min_periods).mean()
 
-    del df["ma_1"], df["ma_2"], df["ma_3"], df["bias_1"], df["bias_2"], df["bias_3"], df["mtm"]
+    df = df.drop(columns=["ma_1", "ma_2", "ma_3", "bias_1", "bias_2", "bias_3", "mtm"])
 
     return df

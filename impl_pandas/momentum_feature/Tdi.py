@@ -19,7 +19,7 @@ def signal(df, n, factor_name, config):
     b = pd.Series(dn).rolling(n, min_periods=config.min_periods).sum()
     a *= 1e3
     b *= 1e3
-    rsi = a / (config.normalize_eps + a + b)
+    rsi = a / (config.eps + a + b)
     rsi_price_line = pd.Series(rsi).ewm(span=n, adjust=config.ewm_adjust, min_periods=config.min_periods).mean()
     rsi_signal_line = (
         pd.Series(rsi).ewm(span=int(2 * n), adjust=config.ewm_adjust, min_periods=config.min_periods).mean()

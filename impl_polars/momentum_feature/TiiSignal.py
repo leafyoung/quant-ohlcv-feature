@@ -30,7 +30,7 @@ def signal(df, n, factor_name, config):
     sumpos = pl.Series(devpos).rolling_sum(int(1 + n / 2), min_samples=config.min_periods)
     sumneg = pl.Series(devneg).rolling_sum(int(1 + n / 2), min_samples=config.min_periods)
 
-    tii = 100 * sumpos / (sumpos + sumneg)
+    tii = 100 * sumpos / (sumpos + sumneg + config.eps)
     tii_signal = pl.Series(tii).ewm_mean(span=int(n / 2), adjust=config.ewm_adjust)
     df = df.with_columns(pl.Series(factor_name, scale_zscore(tii_signal, n, config=config)))
 

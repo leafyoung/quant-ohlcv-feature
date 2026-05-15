@@ -29,7 +29,7 @@ def signal(df, n, factor_name, config):
 
     df["sum_tr"] = df["TR"].rolling(n, min_periods=config.min_periods).sum()
     # df[factor_name] = df['sum_pos'] / df['sum_tr'] #Vi+
-    df[factor_name] = df["sum_neg"] / df["sum_tr"]  # Vi-
+    df[factor_name] = df["sum_neg"] / (df["sum_tr"] + config.eps)  # Vi-
 
     del df["c1"]
     del df["c2"]

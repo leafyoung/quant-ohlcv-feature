@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     n1 = n
 
     # calculate momentum factor
-    mtm = df["close"] / df["close"].shift(n1) - 1
+    mtm = df["close"] / (df["close"].shift(n1) + config.eps) - 1
     mtm_mean = mtm.rolling(window=n1, min_periods=config.min_periods).mean()
 
     # calculate volatility factor wd_atr based on price atr
@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
     # calculate volatility factor for MTM indicator referencing ATR
     mtm_l = df["low"] / df["low"].shift(n1) - 1
     mtm_h = df["high"] / df["high"].shift(n1) - 1
-    mtm_c = df["close"] / df["close"].shift(n1) - 1
+    mtm_c = df["close"] / (df["close"].shift(n1) + config.eps) - 1
     mtm_c1 = mtm_h - mtm_l
     mtm_c2 = abs(mtm_h - mtm_c.shift(1))
     mtm_c3 = abs(mtm_l - mtm_c.shift(1))

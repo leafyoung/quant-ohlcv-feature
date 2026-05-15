@@ -32,7 +32,7 @@ def signal(df, n, factor_name, config):
     sumpos = pl.Series(devpos).rolling_sum(int(1 + n / 2), min_samples=config.min_periods)
     sumneg = pl.Series(devneg).rolling_sum(int(1 + n / 2), min_samples=config.min_periods)
 
-    tii = 100 * sumpos / (sumpos + sumneg)
+    tii = 100 * sumpos / (sumpos + sumneg + config.eps)
     df = df.with_columns(pl.Series(factor_name, scale_01(tii, n, config.normalize_eps, config=config)))
 
     return df

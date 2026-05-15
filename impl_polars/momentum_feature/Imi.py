@@ -22,7 +22,7 @@ def signal(df, n, factor_name, config):
         pl.Series("DEC", np.where(df["open"] > df["close"], df["open"] - df["close"], 0)).fill_nan(None)
     )
     df = df.with_columns(pl.Series("DEC_sum", df["DEC"].rolling_sum(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series(factor_name, df["INC_sum"] / (df["INC_sum"] + df["DEC_sum"])))
+    df = df.with_columns(pl.Series(factor_name, df["INC_sum"] / (df["INC_sum"] + df["DEC_sum"] + config.eps)))
 
     df = df.drop("INC")
     df = df.drop("INC_sum")

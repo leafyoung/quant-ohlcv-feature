@@ -14,7 +14,7 @@ def signal(df, n, factor_name, config):
     df["AMOV"] = df["volume"] * (df["open"] + df["close"]) / 2
     df["AMV1"] = (
         df["AMOV"].rolling(n, min_periods=config.min_periods).sum()
-        / df["volume"].rolling(n, min_periods=config.min_periods).sum()
+        / (df["volume"].rolling(n, min_periods=config.min_periods).sum() + config.eps)
     )
     # df['AMV2'] = df['AMOV'].rolling(n * 3, min_periods=config.min_periods).sum() / df['volume'].rolling(n * 3, min_periods=config.min_periods).sum()
     # normalize

@@ -11,7 +11,7 @@ def signal(df, n, factor_name, config):
     df["ema_1"] = df["close"].ewm(span=N1, adjust=config.ewm_adjust).mean()  # EMA(CLOSE,N1)
     df["ema_2"] = df["close"].ewm(span=N2, adjust=config.ewm_adjust).mean()  # EMA(CLOSE,N2)
     # PPO=(EMA(CLOSE,N1)-EMA(CLOSE,N2))/EMA(CLOSE,N2)
-    df["PPO"] = (df["ema_1"] - df["ema_2"]) / df["ema_2"]
+    df["PPO"] = (df["ema_1"] - df["ema_2"]) / (df["ema_2"] + config.eps)
     df[factor_name] = df["PPO"].ewm(span=N3, adjust=config.ewm_adjust).mean()  # PPO_SIGNAL=EMA(PPO,N3)
 
     del df["ema_1"]

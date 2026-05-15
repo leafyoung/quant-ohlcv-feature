@@ -12,14 +12,14 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(
         pl.Series("n_day_std", df["close"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof))
     )
-    df = df.with_columns(pl.Series("n_day_volatility", df["n_day_std"] / df["n_day_avg_price"] * 100))
+    df = df.with_columns(pl.Series("n_day_volatility", df["n_day_std"] / (df["n_day_avg_price"] + config.eps) * 100))
     # calculate upper and lower bands
     df = df.with_columns(
         pl.Series(
             "RC",
             100
             * (
-                (df["high"] - df["high"].shift(n)) / df["close"].shift(n)
+                (df["high"] - df["high"].shift(n)) / (df["close"].shift(n) + config.eps)
                 + (df["close"] - df["close"].shift(2 * n)) / df["low"].shift(2 * n)
             ),
         )

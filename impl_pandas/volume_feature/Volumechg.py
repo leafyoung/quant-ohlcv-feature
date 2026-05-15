@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
     df["hourly_price_change"] = df["close"].pct_change(1)
     df.loc[df["hourly_price_change"] > 0, "direction"] = 1
     df.loc[df["hourly_price_change"] < 0, "direction"] = -1
-    df["volume_change"] = df["quote_volume"] / df["quote_volume"].shift(1) * df["direction"]
+    df["volume_change"] = df["quote_volume"] / (df["quote_volume"].shift(1) + config.eps) * df["direction"]
     df[factor_name] = df["volume_change"].rolling(n, min_periods=config.min_periods).max()
 
     return df

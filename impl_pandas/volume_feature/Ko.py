@@ -3,7 +3,6 @@ import numpy as np
 
 def signal(df, n, factor_name, config):
     # Ko indicator
-    eps = config.eps
     # Ko indicator (Klinger Oscillator variant)
     # Formula: PRICE = (HIGH+LOW+CLOSE)/3; V = +VOLUME if PRICE > REF(PRICE,1) else -VOLUME
     #          KO = EMA(V, N) - EMA(V, N*1.618); normalized to [0, 1]
@@ -19,7 +18,7 @@ def signal(df, n, factor_name, config):
     df[factor_name] = (df["KO"] - df["KO"].rolling(n, min_periods=config.min_periods).min()) / (
         df["KO"].rolling(n, min_periods=config.min_periods).max()
         - df["KO"].rolling(n, min_periods=config.min_periods).min()
-        + eps
+        + config.eps
     )
 
     # remove redundant columns

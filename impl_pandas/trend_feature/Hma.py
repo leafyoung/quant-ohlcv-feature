@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # Hma
-    eps = config.eps
     """
     N=20
     HMA=MA(HIGH,N)
@@ -9,6 +8,6 @@ def signal(df, n, factor_name, config):
     """
     hma = df["high"].rolling(n, min_periods=config.min_periods).mean()
     # normalize (remove units)
-    df[factor_name] = (df["high"] - hma) / (hma + eps)
+    df[factor_name] = (df["high"] - hma) / (hma + config.eps)
 
     return df

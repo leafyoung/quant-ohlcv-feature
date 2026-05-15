@@ -15,8 +15,8 @@ def signal(df, n, factor_name, config):
 
     a = 2 / (n + 1)
     df["ema"] = df["close"].ewm(alpha=a, adjust=config.ewm_adjust).mean()
-    df["BullPower"] = (df["high"] - df["ema"]) / df["ema"]
-    df["BearPower"] = (df["low"] - df["ema"]) / df["ema"]
+    df["BullPower"] = (df["high"] - df["ema"]) / (df["ema"] + config.eps)
+    df["BearPower"] = (df["low"] - df["ema"]) / (df["ema"] + config.eps)
     df[factor_name] = df["BullPower"] + df["BearPower"]
 
     # delete extra columns

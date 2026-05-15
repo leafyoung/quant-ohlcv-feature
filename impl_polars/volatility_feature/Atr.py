@@ -2,7 +2,6 @@ import polars as pl
 
 
 def signal(df, n, factor_name, config):
-    eps = config.eps
     """
     N=20
     TR=MAX(HIGH-LOW,ABS(HIGH-REF(CLOSE,1)),ABS(LOW-REF(CLOSE,1)))
@@ -16,7 +15,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("_ATR", df["TR"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("middle", df["close"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize using ATR indicator
-    df = df.with_columns(pl.Series(factor_name, df["_ATR"] / (df["middle"] + eps)))
+    df = df.with_columns(pl.Series(factor_name, df["_ATR"] / (df["middle"] + config.eps)))
 
     df = df.drop(["c1", "c2", "c3", "TR", "_ATR", "middle"])
 

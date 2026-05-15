@@ -22,7 +22,7 @@ def signal(df, n, factor_name, config):
             "XRM",
             (
                 df["XR"].rolling_sum(M, min_samples=config.min_periods)
-                / df["TR"].rolling_sum(M, min_samples=config.min_periods)
+                / (df["TR"].rolling_sum(M, min_samples=config.min_periods) + config.eps)
             ),
         ).fill_nan(None)
     )
@@ -31,7 +31,7 @@ def signal(df, n, factor_name, config):
             "XRN",
             (
                 df["XR"].rolling_sum(N, min_samples=config.min_periods)
-                / df["TR"].rolling_sum(N, min_samples=config.min_periods)
+                / (df["TR"].rolling_sum(N, min_samples=config.min_periods) + config.eps)
             ),
         ).fill_nan(None)
     )
@@ -40,7 +40,7 @@ def signal(df, n, factor_name, config):
             "XRO",
             (
                 df["XR"].rolling_sum(O, min_samples=config.min_periods)
-                / df["TR"].rolling_sum(O, min_samples=config.min_periods)
+                / (df["TR"].rolling_sum(O, min_samples=config.min_periods) + config.eps)
             ),
         ).fill_nan(None)
     )

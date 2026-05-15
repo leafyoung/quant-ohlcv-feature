@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Hma
-    eps = config.eps
     """
     N=20
     HMA=MA(HIGH,N)
@@ -12,6 +11,6 @@ def signal(df, n, factor_name, config):
     """
     hma = df["high"].rolling_mean(n, min_samples=config.min_periods)
     # normalize (remove units)
-    df = df.with_columns(pl.Series(factor_name, (df["high"] - hma) / (hma + eps)))
+    df = df.with_columns(pl.Series(factor_name, (df["high"] - hma) / (hma + config.eps)))
 
     return df

@@ -27,8 +27,8 @@ def signal(df, n, factor_name, config):
     # values, and inf, so we use numpy rolling means to stay closer to pandas behaviour.
     close_shift_mean = pl.Series(_rolling_mean_np(df["close_shift"].to_numpy(), n, config.min_periods))
     volume_shift_mean = pl.Series(_rolling_mean_np(df["volume_shift"].to_numpy(), n, config.min_periods))
-    df = df.with_columns(pl.Series("close_ratio", (df["close"] - close_shift_mean).abs() / df["close_shift"]))
-    df = df.with_columns(pl.Series("volume_ratio", (df["volume"] - volume_shift_mean) / df["volume_shift"]))
+    df = df.with_columns(pl.Series("close_ratio", (df["close"] - close_shift_mean).abs() / (df["close_shift"] + config.eps)))
+    df = df.with_columns(pl.Series("volume_ratio", (df["volume"] - volume_shift_mean) / (df["volume_shift"] + config.eps)))
 
     df = df.with_columns(pl.Series("angle", df["close_ratio"] * df["volume_ratio"]))
 
@@ -38,7 +38,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.when(condition).then(-1).otherwise(pl.col("direction")).alias("direction"))
     df = df.with_columns(pl.when(condition).then(np.inf).otherwise(pl.col("adj")).alias("adj"))
 
-    df = df.with_columns(pl.Series(factor_name, df["close_ratio"] / df["volume_ratio"] * df["direction"] * df["adj"]))
+    df = df.with_columns(pl.Series(factor_name, df["close_ratio"] / (df["volume_ratio"] + config.eps) * df["direction"] * df["adj"]))
     df = df.with_columns(pl.Series(factor_name, df[factor_name] / n))
 
     df = df.drop(["close_shift", "volume_shift", "close_ratio", "volume_ratio", "angle", "direction", "adj"])

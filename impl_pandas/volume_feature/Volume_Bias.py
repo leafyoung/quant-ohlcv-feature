@@ -6,7 +6,7 @@ def signal(df, n, factor_name, config):
     short_n = max(1, n // 24)
     df[factor_name] = (
         df["quote_volume"].rolling(short_n, min_periods=config.min_periods).mean()
-        / df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
+        / (df["quote_volume"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
         - 1
     )
 

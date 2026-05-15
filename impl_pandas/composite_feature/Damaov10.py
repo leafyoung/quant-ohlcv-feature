@@ -5,20 +5,19 @@ def signal(df, n, factor_name, config):
     #          ATR = MA(TR,N) / MA(CLOSE,N)  (normalized ATR)
     #          result = COPP * BBW_mean * ATR
     # Combines momentum (COPP), Bollinger volatility (BBW), and range volatility (ATR) into one composite signal.
-    eps = config.eps
     # COPP
     # RC=100*((CLOSE-REF(CLOSE,N1))/REF(CLOSE,N1)+(CLOSE-REF(CLOSE,N2))/REF(CLOSE,N2))
     df["RC"] = 100 * (
-        (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
-        + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+        (df["close"] - df["close"].shift(n)) / (df["close"].shift(n) + config.eps)
+        + (df["close"] - df["close"].shift(2 * n)) / (df["close"].shift(2 * n) + config.eps)
     )
     df["RC_mean"] = df["RC"].rolling(n, min_periods=config.min_periods).mean()
     # BBW
     df["median"] = df["close"].rolling(window=n, min_periods=config.min_periods).mean()
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-    df["z_score"] = abs(df["close"] - df["median"]) / df["std"]
+    df["z_score"] = abs(df["close"] - df["median"]) / (df["std"] + config.eps)
     df["m"] = df["z_score"].rolling(window=n, min_periods=config.min_periods).mean()
-    df["BBW"] = df["std"] * df["m"] * 2 / (df["median"] + eps)
+    df["BBW"] = df["std"] * df["m"] * 2 / (df["median"] + config.eps)
     df["BBW_mean"] = df["BBW"].rolling(n, min_periods=config.min_periods).mean()
     # ATR
     df["c1"] = df["high"] - df["low"]  # HIGH-LOW
@@ -27,7 +26,7 @@ def signal(df, n, factor_name, config):
     df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)  # TR=MAX(HIGH-LOW,ABS(HIGH-REF(CLOSE,1)),ABS(LOW-REF(CLOSE,1)))
     df["_ATR"] = df["TR"].rolling(n, min_periods=config.min_periods).mean()  # ATR=MA(TR,N)
     # normalize ATR indicator
-    df["ATR"] = df["_ATR"] / df["median"]
+    df["ATR"] = df["_ATR"] / (df["median"] + config.eps)
 
     df[factor_name] = df["RC_mean"] * df["BBW_mean"] * df["ATR"]
     # delete extra columns

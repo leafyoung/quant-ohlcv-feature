@@ -13,7 +13,7 @@ def scale_zscore(_s, _n, config):
     # match pandas behaviour of returning NaN. Threshold 1e-5 safely clears polars fp noise (~4e-6)
     # while staying well below the minimum real non-zero std for any Aroon value configuration.
     with np.errstate(divide="ignore", invalid="ignore"):
-        result = np.where(rs < 1e-5, np.nan, (s_np - rm) / rs)
+        result = np.where(rs < config.normalize_eps, np.nan, (s_np - rm) / rs)
     result = pl.Series(result).fill_nan(None)
     # Convert float NaN → polars null so downstream aggregations (mean/std/min/max) skip them
     # (polars NaN propagates, pandas NaN is skipped by aggregations)

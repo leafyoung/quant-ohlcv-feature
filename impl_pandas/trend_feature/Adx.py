@@ -34,36 +34,24 @@ def signal(df, n, factor_name, config):
     # ABS(HIGH-LOW)
     df["c1"] = abs(df["high"] - df["low"])
     # ABS(HIGH-CLOSE)
-    df["c2"] = abs(df["high"] - df["close"])
+    df["c2"] = abs(df["high"] - df["close"].shift(1))
     # ABS(LOW-CLOSE)
-    df["c3"] = abs(df["low"] - df["close"])
+    df["c3"] = abs(df["low"] - df["close"].shift(1))
     # TR=MAX([ABS(HIGH-LOW),ABS(HIGH-CLOSE),ABS(LOW-CLOSE)])
     df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)
     # TR=SUM(TR,N1)
     df["TR_sum"] = df["TR"].rolling(n, min_periods=config.min_periods).sum()
     # DI+=PDM/TR
-    df["DI+"] = df["PDM"] / df["TR"]
+    df["DI+"] = df["PDM"] / (df["TR"] + config.eps)
     # DI-=NDM/TR
-    df["DI-"] = df["NDM"] / df["TR"]
+    df["DI-"] = df["NDM"] / (df["TR"] + config.eps)
 
     df[f"ADX_DI+_bh_{n}"] = df["DI+"].shift(1)
     df[f"ADX_DI-_bh_{n}"] = df["DI-"].shift(1)
     # normalize
-    df[factor_name] = (df["PDM"] + df["NDM"]) / df["TR"]
+    df[factor_name] = (df["PDM"] + df["NDM"]) / (df["TR"] + config.eps)
 
     # remove intermediate data
-    del df["max_high"]
-    del df["max_low"]
-    del df["XPDM"]
-    del df["PDM"]
-    del df["XNDM"]
-    del df["NDM"]
-    del df["c1"]
-    del df["c2"]
-    del df["c3"]
-    del df["TR"]
-    del df["TR_sum"]
-    del df["DI+"]
-    del df["DI-"]
+    df = df.drop(columns=["max_high", "max_low", "XPDM", "PDM", "XNDM", "NDM", "c1", "c2", "c3", "TR", "TR_sum", "DI+", "DI-"])
 
     return df

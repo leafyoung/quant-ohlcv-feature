@@ -17,7 +17,7 @@ def signal(df, n, factor_name, config):
     df["INC_sum"] = df["INC"].rolling(n, min_periods=config.min_periods).sum()
     df["DEC"] = np.where(df["open"] > df["close"], df["open"] - df["close"], 0)
     df["DEC_sum"] = df["DEC"].rolling(n, min_periods=config.min_periods).sum()
-    df[factor_name] = df["INC_sum"] / (df["INC_sum"] + df["DEC_sum"])
+    df[factor_name] = df["INC_sum"] / (df["INC_sum"] + df["DEC_sum"] + config.eps)
 
     del df["INC"]
     del df["INC_sum"]

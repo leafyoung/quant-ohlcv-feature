@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
     #          result = MA(MTM_ADJ, N)
     # Weights momentum by the ratio of taker buy volume to its rolling mean.
     # Above-average taker buying amplifies positive momentum; below-average dampens it.
-    df = df.with_columns(pl.Series("mtm", df["close"] / df["close"].shift(n) - 1))
+    df = df.with_columns(pl.Series("mtm", df["close"] / (df["close"].shift(n) + config.eps) - 1))
     df = df.with_columns(
         pl.Series(
             "mtm",

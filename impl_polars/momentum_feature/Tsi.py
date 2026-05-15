@@ -21,7 +21,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("abs_ema", df["abs_diff_close"].ewm_mean(span=n1, adjust=config.ewm_adjust)))
     df = df.with_columns(pl.Series("abs_ema_ema", df["abs_ema"].ewm_mean(span=n, adjust=config.ewm_adjust)))
 
-    df = df.with_columns(pl.Series(factor_name, df["ema_ema"] / df["abs_ema_ema"] * 100))
+    df = df.with_columns(pl.Series(factor_name, df["ema_ema"] / (df["abs_ema_ema"] + config.eps) * 100))
 
     df = df.drop("diff_close")
     df = df.drop("ema")

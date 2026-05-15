@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
     # Positive values indicate MA is rising; negative indicate it's falling.
     df = df.with_columns(pl.Series("ma", df["close"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(
-        pl.Series(factor_name, (df["ma"] / df["ma"].shift(1) - 1) * 1000)
+        pl.Series(factor_name, (df["ma"] / (df["ma"] + config.eps).shift(1) - 1) * 1000)
     )  # Original price change value is too small, multiply by 1000 to amplify.
 
     df = df.drop("ma")

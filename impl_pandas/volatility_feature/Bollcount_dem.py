@@ -17,7 +17,7 @@ def signal(df, n, factor_name, config):
     df["Ma_Demax"] = df["Demax"].rolling(n, min_periods=config.min_periods).mean()  # MA(Demax, N)
     df["Ma_Demin"] = df["Demin"].rolling(n, min_periods=config.min_periods).mean()  # MA(Demin, N)
     df["Demaker"] = df["Ma_Demax"] / (
-        df["Ma_Demax"] + df["Ma_Demin"]
+        df["Ma_Demax"] + df["Ma_Demin"] + config.eps
     )  # Demaker = MA(Demax, N) / (MA(Demax, N) + MA(Demin, N))
     # df['Demaker_chg'] = df['Demaker']/df
 

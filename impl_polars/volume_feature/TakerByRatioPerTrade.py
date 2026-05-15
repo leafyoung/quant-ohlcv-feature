@@ -11,7 +11,7 @@ def signal(df, n, factor_name, config):
 
     if "trade_num" in df.columns:
         df = df.with_columns(pl.Series("trade_mean", df["trade_num"].rolling_mean(n, min_samples=config.min_periods)))
-        df = df.with_columns(pl.Series(factor_name, buy_volume / volume / df["trade_mean"]))
+        df = df.with_columns(pl.Series(factor_name, buy_volume / volume / (df["trade_mean"] + config.eps)))
         df = df.drop("trade_mean")
     else:
         df = df.with_columns(pl.Series(factor_name, buy_volume / volume))

@@ -1,5 +1,4 @@
 def signal(df, n, factor_name, config):
-    eps = config.eps
     # ADTM indicator
     """
     N=20
@@ -32,14 +31,8 @@ def signal(df, n, factor_name, config):
     df["STM"] = df["DTM"].rolling(n, min_periods=config.min_periods).sum()
     df["SBM"] = df["DBM"].rolling(n, min_periods=config.min_periods).sum()
     max_value3 = df[["STM", "SBM"]].max(axis=1)
-    df[factor_name] = (df["STM"] - df["SBM"]) / (max_value3 + eps)
+    df[factor_name] = (df["STM"] - df["SBM"]) / (max_value3 + config.eps)
 
-    del df["h_o"]
-    del df["diff_open"]
-    del df["o_l"]
-    del df["STM"]
-    del df["SBM"]
-    del df["DBM"]
-    del df["DTM"]
+    df = df.drop(columns=["h_o", "diff_open", "o_l", "STM", "SBM", "DBM", "DTM"])
 
     return df

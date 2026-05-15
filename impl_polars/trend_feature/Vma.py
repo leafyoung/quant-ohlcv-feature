@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Vma
-    eps = config.eps
     """
     N=20
     PRICE=(HIGH+LOW+OPEN+CLOSE)/4
@@ -13,6 +12,6 @@ def signal(df, n, factor_name, config):
     """
     price = (df["high"] + df["low"] + df["open"] + df["close"]) / 4  # PRICE=(HIGH+LOW+OPEN+CLOSE)/4
     vma = price.rolling_mean(n, min_samples=config.min_periods)  # VMA=MA(PRICE,N)
-    df = df.with_columns(pl.Series(factor_name, price / (vma + eps) - 1))  # normalize
+    df = df.with_columns(pl.Series(factor_name, price / (vma + config.eps) - 1))  # normalize
 
     return df

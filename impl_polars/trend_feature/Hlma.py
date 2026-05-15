@@ -17,7 +17,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("HLMA_mean", df["HLMA"].rolling_mean(n, min_samples=config.min_periods)))
 
     # normalize (remove units)
-    df = df.with_columns(pl.Series(factor_name, df["HLMA"] / df["HLMA_mean"] - 1))
+    df = df.with_columns(pl.Series(factor_name, df["HLMA"] / (df["HLMA_mean"] + config.eps) - 1))
 
     df = df.drop("HLMA")
     df = df.drop("HLMA_mean")

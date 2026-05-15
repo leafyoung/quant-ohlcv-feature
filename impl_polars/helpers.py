@@ -19,8 +19,8 @@ def scale_01(_s, _n, eps, config):
 
 def scale_zscore(_s, _n, config):
     """Z-score normalisation: ``(value - rolling_mean) / rolling_std``."""
-    _s = (pl.Series(_s) - pl.Series(_s).rolling_mean(_n, min_samples=config.min_periods)) / pl.Series(_s).rolling_std(
-        _n, min_samples=config.min_periods, ddof=config.ddof
+    _s = (pl.Series(_s) - pl.Series(_s).rolling_mean(_n, min_samples=config.min_periods)) / (
+        pl.Series(_s).rolling_std(_n, min_samples=config.min_periods, ddof=config.ddof) + config.eps
     )
     return pl.Series(_s)
 

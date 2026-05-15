@@ -10,7 +10,7 @@ def signal(df, n, factor_name, config):
     # Multiplies the DBCD momentum oscillator by the taker buy ratio.
     # Amplifies the buy signal when both momentum and buy-side volume confirm the uptrend.
     df = df.with_columns(pl.Series("ma", df["close"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("Bias", (df["close"] - df["ma"]) / df["ma"] * 100))
+    df = df.with_columns(pl.Series("Bias", (df["close"] - df["ma"]) / (df["ma"] + config.eps) * 100))
     df = df.with_columns(pl.Series("Bias_DIF", df["Bias"] - df["Bias"].shift(3 * n)))
 
     volume = df["quote_volume"].rolling_sum(n, min_samples=config.min_periods)
@@ -18,7 +18,7 @@ def signal(df, n, factor_name, config):
 
     df = df.with_columns(
         pl.Series(
-            factor_name, df["Bias_DIF"].rolling_mean(3 * n + 2, min_samples=config.min_periods) * (buy_volume / volume)
+            factor_name, df["Bias_DIF"].rolling_mean(3 * n + 2, min_samples=config.min_periods) * (buy_volume / (volume + config.eps))
         )
     )
 

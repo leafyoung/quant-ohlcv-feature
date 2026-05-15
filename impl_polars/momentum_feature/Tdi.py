@@ -21,7 +21,7 @@ def signal(df, n, factor_name, config):
     b = pl.Series(dn).rolling_sum(n, min_samples=config.min_periods)
     a *= 1e3
     b *= 1e3
-    rsi = a / (config.normalize_eps + a + b)
+    rsi = a / (config.eps + a + b)
     rsi_price_line = pl.Series(rsi).ewm_mean(span=n, adjust=config.ewm_adjust)
     rsi_signal_line = pl.Series(rsi).ewm_mean(span=int(2 * n), adjust=config.ewm_adjust)
 

@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
     sumpos = pd.Series(devpos).rolling(int(1 + n / 2), min_periods=config.min_periods).sum()
     sumneg = pd.Series(devneg).rolling(int(1 + n / 2), min_periods=config.min_periods).sum()
 
-    tii = 100 * sumpos / (sumpos + sumneg)
+    tii = 100 * sumpos / (sumpos + sumneg + config.eps)
     tii_signal = pd.Series(tii).ewm(span=int(n / 2), adjust=config.ewm_adjust, min_periods=config.min_periods).mean()
     df[factor_name] = scale_zscore(tii_signal, n, config=config)
 

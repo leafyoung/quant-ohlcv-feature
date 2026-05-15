@@ -15,7 +15,7 @@ def signal(df, n, factor_name, config):
     actual_distance = each_distance.rolling(n - 1, min_periods=config.min_periods).sum()
     # calculate PFE
     PFE = 100 * (direct_distance / actual_distance)
-    pct_change = (df["close"] - df["close"].shift(n - 1)) / df["close"].shift(n - 1)
+    pct_change = (df["close"] - df["close"].shift(n - 1)) / (df["close"].shift(n - 1) + config.eps)
     df[factor_name] = PFE * pct_change
 
     return df

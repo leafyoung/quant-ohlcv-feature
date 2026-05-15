@@ -19,7 +19,7 @@ def signal(df, n, factor_name, config):
     span_a = (ts + ks) / 2.0
     span_b = (high_max3 + low_min3) / 2.0
 
-    s = (df["close"] - span_b) / (config.normalize_eps + span_a - span_b)
+    s = (df["close"] - span_b) / (config.eps + span_a - span_b)
     df[factor_name] = scale_01(s, n, config.normalize_eps, config=config)
 
     return df

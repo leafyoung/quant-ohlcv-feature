@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # Pac indicator
-    eps = config.eps
     """
     N1=20
     N2=20
@@ -14,7 +13,7 @@ def signal(df, n, factor_name, config):
     df["width"] = df["upper"] - df["lower"]  # add indicator to compute width for normalization
     df["width_ma"] = df["width"].rolling(n, min_periods=config.min_periods).mean()
 
-    df[factor_name] = df["width"] / (df["width_ma"] + eps) - 1
+    df[factor_name] = df["width"] / (df["width_ma"] + config.eps) - 1
 
     # remove redundant columns
     del df["upper"], df["lower"], df["width"], df["width_ma"]

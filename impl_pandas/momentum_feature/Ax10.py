@@ -1,12 +1,11 @@
 def signal(df, n, factor_name, config):
     # Ax10 indicator (TMA momentum × ATR volatility × taker buy composite)
-    # Formula: TMA = MA(MA((HIGH+LOW)/2, N), N); MTM = CLOSE/(TMA+eps) - 1
+    # Formula: TMA = MA(MA((HIGH+LOW)/2, N), N); MTM = CLOSE/(TMA+config.eps) - 1
     #          WD_ATR = ATR(N) / MA(CLOSE,N)  (normalized ATR)
     #          TAKER_BUY = MA(TAKER_BUY_QUOTE_VOLUME / MA(QUOTE_VOLUME,N) * 100, N)
     #          result = MA(MTM,N) * WD_ATR * TAKER_BUY * 1e8
     # Composite factor combining triangular MA momentum, ATR volatility, and taker buy pressure.
     # Scaled by 1e8 to amplify small values for practical use.
-    eps = config.eps
 
     n1 = int(n)
 
@@ -15,7 +14,7 @@ def signal(df, n, factor_name, config):
 
     close_ma = ts.rolling(n, min_periods=config.min_periods).mean()
     tma = close_ma.rolling(n, min_periods=config.min_periods).mean()
-    df["mtm"] = df["close"] / (tma + eps) - 1
+    df["mtm"] = df["close"] / (tma + config.eps) - 1
 
     df["mtm_mean"] = df["mtm"].rolling(window=n1, min_periods=config.min_periods).mean()
 
@@ -26,11 +25,11 @@ def signal(df, n, factor_name, config):
     df["tr"] = df[["c1", "c2", "c3"]].max(axis=1)
     df["atr"] = df["tr"].rolling(window=n1, min_periods=config.min_periods).mean()
     df["avg_price_"] = df["close"].rolling(window=n1, min_periods=config.min_periods).mean()
-    df["wd_atr"] = df["atr"] / df["avg_price_"]
+    df["wd_atr"] = df["atr"] / (df["avg_price_"] + config.eps)
 
     # average taker buy ratio
     df["vma"] = df["quote_volume"].rolling(n, min_periods=config.min_periods).mean()
-    df["taker_buy_ma"] = (df["taker_buy_quote_asset_volume"] / df["vma"]) * 100
+    df["taker_buy_ma"] = (df["taker_buy_quote_asset_volume"] / (df["vma"] + config.eps)) * 100
     df["taker_buy_mean"] = df["taker_buy_ma"].rolling(window=n, min_periods=config.min_periods).mean()
 
     indicator = "mtm_mean"
@@ -53,6 +52,6 @@ def signal(df, n, factor_name, config):
         "taker_buy_ma",
         "taker_buy_mean",
     ]
-    df.drop(columns=drop_col, inplace=True)
+    df = df.drop(columns=drop_col)
 
     return df

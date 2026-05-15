@@ -20,7 +20,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("Demin", np.where(df["Demin"] > 0, df["Demin"], 0)).fill_nan(None))
     df = df.with_columns(pl.Series("Demax_ma", df["Demax"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("Demin_ma", df["Demin"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series(factor_name, df["Demax_ma"] / (df["Demax_ma"] + df["Demin_ma"])))
+    df = df.with_columns(pl.Series(factor_name, df["Demax_ma"] / (df["Demax_ma"] + df["Demin_ma"] + config.eps)))
 
     df = df.drop("Demax")
     df = df.drop("Demin")

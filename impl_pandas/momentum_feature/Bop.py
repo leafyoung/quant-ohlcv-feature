@@ -12,7 +12,7 @@ def signal(df, n, factor_name, config):
     """
     df["co"] = df["close"] - df["open"]
     df["hl"] = df["high"] - df["low"]
-    df[factor_name] = (df["co"] / df["hl"]).rolling(n, min_periods=config.min_periods).mean()
+    df[factor_name] = (df["co"] / (df["hl"] + config.eps)).rolling(n, min_periods=config.min_periods).mean()
 
     del df["co"]
     del df["hl"]

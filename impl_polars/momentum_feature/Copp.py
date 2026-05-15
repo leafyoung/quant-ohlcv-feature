@@ -14,8 +14,8 @@ def signal(df, n, factor_name, config):
             "RC",
             100
             * (
-                (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
-                + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+                (df["close"] - df["close"].shift(n)) / (df["close"].shift(n) + config.eps)
+                + (df["close"] - df["close"].shift(2 * n)) / (df["close"].shift(2 * n) + config.eps)
             ),
         )
     )

@@ -32,7 +32,7 @@ def signal(df, n, factor_name, config):
         df["neg"].rolling(n, min_periods=config.min_periods).sum()
     )  # MF_NEG=SUM(IF(TYPICAL_PRICE<=REF(TYPICAL_PRICE,1),MF,0),N)
 
-    df[factor_name] = 100 - 100 / (1 + df["MF_POS"] / df["MF_NEG"])  # MFI=100-100/(1+MF_POS/MF_NEG)
+    df[factor_name] = 100 - 100 / (1 + df["MF_POS"] / (df["MF_NEG"] + config.eps))  # MFI=100-100/(1+MF_POS/MF_NEG)
 
     # delete intermediate data
     del df["price"]

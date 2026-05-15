@@ -14,9 +14,9 @@ def signal(df, n, factor_name, config):
     df["p_min"] = df["p"].rolling(n, min_periods=config.min_periods).min()
     short_period = max(n // 3, 1)
     df["up"] = np.where(df["p"] > df["p_max"].shift(short_period), df["p"], df["p_max"].shift(short_period))
-    df["up"] = (df["up"] - df["p_max"].shift(short_period)) / df["p_max"].shift(short_period)
+    df["up"] = (df["up"] - df["p_max"].shift(short_period)) / (df["p_max"].shift(short_period) + config.eps)
     df["down"] = np.where(df["p"] < df["p_min"].shift(short_period), df["p"], df["p_min"].shift(short_period))
-    df["down"] = (df["down"] - df["p_min"].shift(short_period)) / df["p_min"].shift(short_period)
+    df["down"] = (df["down"] - df["p_min"].shift(short_period)) / (df["p_min"].shift(short_period) + config.eps)
     df[factor_name] = (df["up"] + df["down"]).rolling(short_period, min_periods=config.min_periods).mean()
 
     del df["p"], df["p_max"], df["p_min"], df["up"], df["down"]

@@ -41,9 +41,9 @@ def signal(df, n, factor_name, config):
             + (df["close"].shift(1) - df["open"].shift(1))
             + 0.5 * (df["close"] - df["open"])
         )
-        / df["R"]
+        / (df["R"] + config.eps)
         * df["K"]
-        / df["M"]
+        / (df["M"] + config.eps)
     )
 
     del df["A"]

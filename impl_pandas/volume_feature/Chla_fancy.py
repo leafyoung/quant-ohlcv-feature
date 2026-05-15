@@ -10,7 +10,7 @@ def signal(df, n, factor_name, config):
     # contributes negative volume. Rolling sum reflects accumulated buying/selling pressure.
     df["divnum"] = df["high"] - df["low"]
     df["divnum"] = df["divnum"].replace(0, np.nan)
-    df["temp"] = (2 * df["close"] - df["high"] - df["low"]) / df["divnum"] * df["quote_volume"]
+    df["temp"] = (2 * df["close"] - df["high"] - df["low"]) / (df["divnum"] + config.eps) * df["quote_volume"]
     df[factor_name] = df["temp"].rolling(n, min_periods=config.min_periods).sum()
 
     del df["divnum"], df["temp"]

@@ -7,7 +7,7 @@ def signal(df, n, factor_name, config):
     # Smooths the N-period momentum by taking its rolling mean, reducing noise.
     # Positive values indicate sustained upward price trend; negative indicates downward trend.
     df = df.with_columns(
-        pl.Series(factor_name, (df["close"] / df["close"].shift(n) - 1).rolling_mean(n, min_samples=config.min_periods))
+        pl.Series(factor_name, (df["close"] / (df["close"].shift(n) + config.eps) - 1).rolling_mean(n, min_samples=config.min_periods))
     )
 
     return df

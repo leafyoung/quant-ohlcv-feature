@@ -23,7 +23,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("min_low", df["low"].rolling_min(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("max_high", df["high"].rolling_max(n, min_samples=config.min_periods)))
     df = df.with_columns(
-        pl.Series("price_ch", PARAM * 2 * ((df["price"] - df["min_low"]) / (df["max_high"] - df["min_low"]) - 0.5))
+        pl.Series("price_ch", PARAM * 2 * ((df["price"] - df["min_low"]) / (df["max_high"] - df["min_low"] + config.eps) - 0.5))
     )
     df = df.with_columns(pl.Series("price_change", df["price_ch"] + (1 - PARAM) * df["price_ch"].shift(1)))
     df = df.with_columns(
@@ -38,7 +38,7 @@ def signal(df, n, factor_name, config):
     # price = (df['high'] + df['low']) / 2.
     # low_min = df['low'].rolling_min(n, min_samples=config.min_periods)
     # high_max = df['high'].rolling_max(n, min_samples=config.min_periods)
-    # price_ch = 2 * (price - 0.5 - low_min / (1e-9 + high_max - low_min))
+    # price_ch = 2 * (price - 0.5 - low_min / (config.eps + high_max - low_min))
     # price_ch = np.where(price_ch > 0.99, 0.99, price_ch)
     # price_ch = np.where(price_ch < -0.99, -0.99, price_ch)
     # price_ch = 0.3 * pl.Series(price_ch) + 0.7 * pl.Series(price_ch).shift(1)

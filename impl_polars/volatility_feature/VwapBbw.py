@@ -26,7 +26,7 @@ def signal(df, n, factor_name, config):
         )
     )
 
-    feature = (vwap_chg * bbw_chg) / df["quote_volume_normalized"]
+    feature = (vwap_chg * bbw_chg) / (df["quote_volume_normalized"] + config.eps)
     df = df.with_columns(pl.Series(factor_name, feature.rolling_sum(n, min_samples=config.min_periods)))
 
     df = df.drop("quote_volume_normalized")

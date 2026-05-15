@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # Dpo
-    eps = config.eps
     """
     N=20
     DPO=CLOSE-REF(MA(CLOSE,N),N/2+1)
@@ -12,7 +11,7 @@ def signal(df, n, factor_name, config):
     """
 
     df["median"] = df["close"].rolling(window=n, min_periods=config.min_periods).mean()  # calculate middle band
-    df[factor_name] = (df["close"] - df["median"].shift(int(n / 2) + 1)) / (df["median"] + eps)
+    df[factor_name] = (df["close"] - df["median"].shift(int(n / 2) + 1)) / (df["median"] + config.eps)
 
     del df["median"]
 

@@ -31,8 +31,8 @@ def signal(df, n, factor_name, config):
         pl.Series("max_low", np.where(df["low"].shift(1) > df["low"], df["low"].shift(1) - df["low"], 0)).fill_nan(None)
     )
     # XPDM=IF(MAX_HIGH>MAX_LOW,HIGH-REF(HIGH,1),0)
-    # tol=1e-9: guard against CSV float-parsing ULP boundary condition flips
-    tol = 1e-9
+    # tol=config.normalize_eps: guard against CSV float-parsing ULP boundary condition flips
+    tol = config.normalize_eps
     df = df.with_columns(
         pl.Series("XPDM", np.where(df["max_high"] > df["max_low"] + tol, df["high"] - df["high"].shift(1), 0)).fill_nan(
             None
@@ -51,9 +51,9 @@ def signal(df, n, factor_name, config):
     # ABS(HIGH-LOW)
     df = df.with_columns(pl.Series("c1", abs(df["high"] - df["low"])))
     # ABS(HIGH-CLOSE)
-    df = df.with_columns(pl.Series("c2", abs(df["high"] - df["close"])))
+    df = df.with_columns(pl.Series("c2", abs(df["high"] - df["close"].shift(1))))
     # ABS(LOW-CLOSE)
-    df = df.with_columns(pl.Series("c3", abs(df["low"] - df["close"])))
+    df = df.with_columns(pl.Series("c3", abs(df["low"] - df["close"].shift(1))))
     # TR=MAX([ABS(HIGH-LOW),ABS(HIGH-CLOSE),ABS(LOW-CLOSE)])
     df = df.with_columns(TR=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
     # TR=SUM(TR,N1)
@@ -61,7 +61,7 @@ def signal(df, n, factor_name, config):
     # DI+=PDM/TR
     # df[factor_name] = df['PDM'] / df['TR'] #DI+
     # DI-=NDM/TR
-    df = df.with_columns(pl.Series(factor_name, df["NDM"] / df["TR"]))  # DI-
+    df = df.with_columns(pl.Series(factor_name, df["NDM"] / (df["TR"] + config.eps)))  # DI-
 
     # df[f'ADX_DI+_bh_{n}'] = df['DI+'].shift(1)
     # df[f'ADX_DI-_bh_{n}'] = df['DI-'].shift(1)

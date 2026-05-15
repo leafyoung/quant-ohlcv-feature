@@ -16,7 +16,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(
         pl.when(df["hourly_price_change"] < 0).then(-1).otherwise(pl.col("direction")).alias("direction")
     )
-    df = df.with_columns(pl.Series("volume_change", df["quote_volume"] / df["quote_volume"].shift(1) * df["direction"]))
+    df = df.with_columns(pl.Series("volume_change", df["quote_volume"] / (df["quote_volume"].shift(1) + config.eps) * df["direction"]))
     # fill_nan(None): direction=NaN (zero-change rows) and shift NaN propagate; convert to null so rolling_max skips them
     df = df.with_columns(
         pl.Series(factor_name, df["volume_change"].fill_nan(None).rolling_max(n, min_samples=config.min_periods))

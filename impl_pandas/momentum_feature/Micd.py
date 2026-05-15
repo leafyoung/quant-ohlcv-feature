@@ -19,7 +19,7 @@ def signal(df, n, factor_name, config):
     df["DIF"] = df["MIMMA_MA1"] - df["MIMMA_MA2"]
     df["MICD"] = df["DIF"].rolling(n, min_periods=config.min_periods).mean()
     # normalize
-    df[factor_name] = df["DIF"] / df["MICD"]
+    df[factor_name] = df["DIF"] / (df["MICD"] + config.eps)
 
     del df["MI"]
     del df["MIMMA"]

@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
 
     # calculate PMO
     df["ROC"] = (
-        (df["TEMA"] - df["TEMA"].shift(1)) / df["TEMA"].shift(1) * 100
+        (df["TEMA"] - df["TEMA"].shift(1)) / (df["TEMA"].shift(1) + config.eps) * 100
     )  # use TEMA moving average instead of original CLOSE
     df["ROC_MA"] = (
         df["ROC"].rolling(n, min_periods=config.min_periods).mean()

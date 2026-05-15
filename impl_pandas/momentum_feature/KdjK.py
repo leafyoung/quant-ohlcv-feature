@@ -5,7 +5,6 @@ def signal(df, n, factor_name, config):
     # The K line of the KDJ oscillator — smoothed stochastic value.
     # Measures where the close is within the N-period high-low range, smoothed once.
     # Overbought > 80; oversold < 20.
-    eps = config.eps
     low_list = (
         df["low"].rolling(n, min_periods=config.min_periods).min()
     )  # MIN(LOW,N) find minimum low within the period
@@ -13,7 +12,7 @@ def signal(df, n, factor_name, config):
         df["high"].rolling(n, min_periods=config.min_periods).max()
     )  # MAX(HIGH,N) find maximum high within the period
     # Stochastics=(CLOSE-LOW_N)/(HIGH_N-LOW_N)*100 calculate a stochastic value
-    rsv = (df["close"] - low_list) / (high_list - low_list + eps) * 100
+    rsv = (df["close"] - low_list) / (high_list - low_list + config.eps) * 100
     # K D J values are within a fixed range
     df[factor_name] = rsv.ewm(com=2, adjust=config.ewm_adjust).mean()  # K=SMA(Stochastics,3,1) calculate K
 

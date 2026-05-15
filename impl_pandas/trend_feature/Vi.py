@@ -28,8 +28,8 @@ def signal(df, n, factor_name, config):
     df["sum_neg"] = df["VMNEG"].rolling(n, min_periods=config.min_periods).sum()
 
     df["sum_tr"] = df["TR"].rolling(n, min_periods=config.min_periods).sum()
-    df["Vi+"] = df["sum_pos"] / df["sum_tr"]
-    df["Vi-"] = df["sum_neg"] / df["sum_tr"]
+    df["Vi+"] = df["sum_pos"] / (df["sum_tr"] + config.eps)
+    df["Vi-"] = df["sum_neg"] / (df["sum_tr"] + config.eps)
     df[factor_name] = df["Vi+"] - df["Vi-"]
     # df[f'Vi+_bh_{n}'] = df['Vi+'].shift(1)
     # df[f'Vi-_bh_{n}'] = df['Vi-'].shift(1)

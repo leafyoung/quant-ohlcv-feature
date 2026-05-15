@@ -30,7 +30,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("macd", 2 * (df["dif"] - df["dea"])))
 
     df = df.with_columns(
-        pl.Series(factor_name, df["macd"] / df["macd"].rolling_mean(macd_windows, min_samples=config.min_periods) - 1)
+        pl.Series(factor_name, df["macd"] / (df["macd"].rolling_mean(macd_windows, min_samples=config.min_periods) + config.eps) - 1)
     )
 
     df = df.drop("ema_short")

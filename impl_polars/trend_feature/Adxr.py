@@ -24,8 +24,8 @@ def signal(df, n, factor_name, config):
     max_high = pl.Series(max_high).fill_nan(None)
     max_low = np.where(df["low"].shift(1) > df["low"], df["low"].shift(1) - df["low"], 0)
     max_low = pl.Series(max_low).fill_nan(None)
-    # tol=1e-9: guard against CSV float-parsing ULP differences causing boundary condition flips
-    tol = 1e-9
+    # tol=config.normalize_eps: guard against CSV float-parsing ULP differences causing boundary condition flips
+    tol = config.normalize_eps
     xpdm = np.where(max_high > max_low + tol, pl.Series(max_high).fill_nan(None) - pl.Series(max_high).shift(1), 0)
     xndm = np.where(max_low > max_high + tol, pl.Series(max_low).fill_nan(None).shift(1) - pl.Series(max_low), 0)
     tr = np.max(

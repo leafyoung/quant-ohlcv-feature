@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # CCI - most commonly used T indicator
-    eps = config.eps
     """
     N=14
     TP=(HIGH+LOW+CLOSE)/3
@@ -17,7 +16,7 @@ def signal(df, n, factor_name, config):
     df["ma"] = df["tp"].rolling(window=n, min_periods=config.min_periods).mean()
     df["md"] = abs(df["tp"] - df["ma"]).rolling(window=n, min_periods=config.min_periods).mean()
 
-    df[factor_name] = (df["tp"] - df["ma"]) / (df["md"] * 0.015 + eps)
+    df[factor_name] = (df["tp"] - df["ma"]) / (df["md"] * 0.015 + config.eps)
 
     del df["tp"]
     del df["ma"]

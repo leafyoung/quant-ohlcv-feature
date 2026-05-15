@@ -7,7 +7,6 @@ def signal(df, n, factor_name, config):
     AdaptBollingv3
     Use Sroc_v2 instead of mtm_mean as the B-selection factor
     """
-    eps = config.eps
 
     n1 = int(n)
 
@@ -18,7 +17,7 @@ def signal(df, n, factor_name, config):
 
     ema = ta.KAMA(df["close"], n)
     ref = ema.shift(2 * n)
-    df = df.with_columns(pl.Series("sorc", (ema - ref) / (ref + eps)))
+    df = df.with_columns(pl.Series("sorc", (ema - ref) / (ref + config.eps)))
 
     # based on price ATR, calculate volatility factor wd_atr
     df = df.with_columns(pl.Series("c1", df["high"] - df["low"]))
@@ -27,12 +26,12 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(tr=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
     df = df.with_columns(pl.Series("atr", df["tr"].rolling_mean(n1, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("avg_price_", df["close"].rolling_mean(n1, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("wd_atr", df["atr"] / df["avg_price_"]))
+    df = df.with_columns(pl.Series("wd_atr", df["atr"] / (df["avg_price_"] + config.eps)))
 
     # referring to ATR, calculate volatility factor for MTM indicator
     df = df.with_columns(pl.Series("mtm_l", df["low"] / df["low"].shift(n1) - 1))
     df = df.with_columns(pl.Series("mtm_h", df["high"] / df["high"].shift(n1) - 1))
-    df = df.with_columns(pl.Series("mtm_c", df["close"] / df["close"].shift(n1) - 1))
+    df = df.with_columns(pl.Series("mtm_c", df["close"] / (df["close"].shift(n1) + config.eps) - 1))
     df = df.with_columns(pl.Series("mtm_c1", df["mtm_h"] - df["mtm_l"]))
     df = df.with_columns(pl.Series("mtm_c2", abs(df["mtm_h"] - df["mtm_c"].shift(1))))
     df = df.with_columns(pl.Series("mtm_c3", abs(df["mtm_l"] - df["mtm_c"].shift(1))))

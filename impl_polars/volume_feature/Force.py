@@ -9,7 +9,7 @@ def signal(df, n, factor_name, config):
     # Note: n should not exceed half the number of filtered K-lines when using this indicator (not half the K-line data fetched)
     df = df.with_columns(pl.Series("force", df["quote_volume"] * (df["close"] - df["close"].shift(1))))
     df = df.with_columns(
-        pl.Series(factor_name, df["force"] / df["force"].rolling_mean(n, min_samples=config.min_periods))
+        pl.Series(factor_name, df["force"] / (df["force"].rolling_mean(n, min_samples=config.min_periods) + config.eps))
     )
 
     # ref = ma.shift(n)  # MADisplaced=REF(MA_CLOSE,M)

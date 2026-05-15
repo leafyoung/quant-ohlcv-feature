@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
     N2 = 2 * n
     df["ema_1"] = df["close"].ewm(span=N1, adjust=config.ewm_adjust).mean()  # EMA(CLOSE,N1)
     df["ema_2"] = df["close"].ewm(span=N2, adjust=config.ewm_adjust).mean()  # EMA(CLOSE,N2)
-    df["PPO"] = (df["ema_1"] / df["ema_1"].shift(N1) - 1) * abs(df["ema_2"] / df["ema_2"].shift(N2) - 1)
+    df["PPO"] = (df["ema_1"] / (df["ema_1"].shift(N1) + config.eps) - 1) * abs(df["ema_2"] / (df["ema_2"].shift(N2) + config.eps) - 1)
 
     df[factor_name] = df["PPO"].ewm(span=N1, adjust=config.ewm_adjust).mean()
 

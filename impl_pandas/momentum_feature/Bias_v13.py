@@ -6,7 +6,7 @@ def signal(df, n, factor_name, config):
     # Positive values indicate short MA is consistently above long MA (uptrend); negative indicates downtrend.
     df["ma"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["mafast"] = df["close"].rolling(int(n / 2), min_periods=config.min_periods).mean()
-    df[factor_name] = (df["mafast"] / df["ma"] - 1).rolling(n, min_periods=config.min_periods).mean()
+    df[factor_name] = (df["mafast"] / (df["ma"] + config.eps) - 1).rolling(n, min_periods=config.min_periods).mean()
 
     del df["ma"], df["mafast"]
 

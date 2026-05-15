@@ -12,7 +12,7 @@ def signal(df, n, factor_name, config):
         pl.Series(
             factor_name,
             (df["_ret"] - df["_ret"].rolling_mean(n, min_samples=config.min_periods))
-            / df["_ret"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof),
+            / (df["_ret"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof) + config.eps),
         ).fill_nan(None)
     )
 

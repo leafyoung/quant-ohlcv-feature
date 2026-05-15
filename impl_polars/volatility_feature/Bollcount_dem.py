@@ -17,7 +17,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("Demin", np.where(df["Demin"].fill_null(0) > 0, df["Demin"], 0)).fill_nan(None))
     df = df.with_columns(pl.Series("Ma_Demax", df["Demax"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("Ma_Demin", df["Demin"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("Demaker", df["Ma_Demax"] / (df["Ma_Demax"] + df["Ma_Demin"])))
+    df = df.with_columns(pl.Series("Demaker", df["Ma_Demax"] / (df["Ma_Demax"] + df["Ma_Demin"] + config.eps)))
     df = df.with_columns(pl.col("Demaker").fill_nan(None).alias("Demaker"))
 
     df = df.with_columns(pl.lit(0).alias("count"))

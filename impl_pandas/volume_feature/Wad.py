@@ -2,7 +2,6 @@ import numpy as np
 
 
 def signal(df, n, factor_name, config):
-    eps = config.eps
     #  WAD indicator
     """
     TRH=MAX(HIGH,REF(CLOSE,1))
@@ -26,7 +25,7 @@ def signal(df, n, factor_name, config):
     df["WAD"] = df["AD"].cumsum()
     df["WADMA"] = df["WAD"].rolling(n, min_periods=config.min_periods).mean()
     # normalize
-    df[factor_name] = df["WAD"] / (df["WADMA"] + eps)
+    df[factor_name] = df["WAD"] / (df["WADMA"] + config.eps)
 
     del df["ref_close"]
     del df["TRH"], df["TRL"]

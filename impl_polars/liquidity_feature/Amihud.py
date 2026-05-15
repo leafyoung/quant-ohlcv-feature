@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("route_2", 2 * (df["high"] - df["low"]) + (df["close"] - df["open"])))
     df = df.with_columns(intraday_shortest_path=pl.min_horizontal([pl.col("route_1"), pl.col("route_2")]))
     df = df.with_columns(pl.Series("normalized_shortest_path", df["intraday_shortest_path"] / df["open"]))
-    df = df.with_columns(pl.Series("liquidity_premium", df["quote_volume"] / df["normalized_shortest_path"]))
+    df = df.with_columns(pl.Series("liquidity_premium", df["quote_volume"] / (df["normalized_shortest_path"] + config.eps)))
 
     df = df.with_columns(pl.Series(factor_name, df["liquidity_premium"].rolling_mean(n, min_samples=2)))
 

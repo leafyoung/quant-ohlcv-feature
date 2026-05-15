@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
             pl.Series(
                 factor_name,
                 df["quote_volume"].rolling_sum(n, min_samples=config.min_periods)
-                / df["trade_num"].rolling_sum(n, min_samples=config.min_periods),
+                / (df["trade_num"].rolling_sum(n, min_samples=config.min_periods) + config.eps),
             )
         )
     else:

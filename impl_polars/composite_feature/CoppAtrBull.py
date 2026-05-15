@@ -16,8 +16,8 @@ def signal(df, n, factor_name, config):
             "RC",
             100
             * (
-                (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
-                + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+                (df["close"] - df["close"].shift(n)) / (df["close"].shift(n) + config.eps)
+                + (df["close"] - df["close"].shift(2 * n)) / (df["close"].shift(2 * n) + config.eps)
             ),
         )
     )
@@ -31,11 +31,11 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(TR=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
     df = df.with_columns(pl.Series("_ATR", df["TR"].rolling_mean(n, min_samples=config.min_periods)))
     # normalize ATR indicator
-    df = df.with_columns(pl.Series("ATR", df["_ATR"] / df["median"]))
+    df = df.with_columns(pl.Series("ATR", df["_ATR"] / (df["median"] + config.eps)))
 
     # average taker buy ratio
     df = df.with_columns(pl.Series("vma", df["quote_volume"].rolling_mean(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("taker_buy_ma", (df["taker_buy_quote_asset_volume"] / df["vma"]) * 100))
+    df = df.with_columns(pl.Series("taker_buy_ma", (df["taker_buy_quote_asset_volume"] / (df["vma"] + config.eps)) * 100))
     df = df.with_columns(
         pl.Series("taker_buy_mean", df["taker_buy_ma"].rolling_mean(n, min_samples=config.min_periods))
     )

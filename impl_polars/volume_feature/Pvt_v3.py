@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Pvt_v3 indicator
-    eps = config.eps
     """
     PVT=(CLOSE-REF(CLOSE,1))/REF(CLOSE,1)*VOLUME
     PVT_MA1=MA(PVT,N1)
@@ -20,7 +19,7 @@ def signal(df, n, factor_name, config):
     # normalize
     df = df.with_columns(
         pl.Series("PVT_score", (df["PVT"] - df["PVT"].rolling_mean(n, min_samples=config.min_periods)))
-        / (df["PVT"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof) + eps)
+        / (df["PVT"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof) + config.eps)
     )
     df = df.with_columns(pl.Series("PVT_sum", df["PVT_score"].rolling_sum(n, min_samples=config.min_periods)))
     pvt_ma1 = df["PVT_sum"].rolling_mean(n, min_samples=config.min_periods)

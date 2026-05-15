@@ -34,15 +34,15 @@ def signal(df, n, factor_name, config):
     # ABS(HIGH-LOW)
     df["c1"] = abs(df["high"] - df["low"])
     # ABS(HIGH-CLOSE)
-    df["c2"] = abs(df["high"] - df["close"])
+    df["c2"] = abs(df["high"] - df["close"].shift(1))
     # ABS(LOW-CLOSE)
-    df["c3"] = abs(df["low"] - df["close"])
+    df["c3"] = abs(df["low"] - df["close"].shift(1))
     # TR=MAX([ABS(HIGH-LOW),ABS(HIGH-CLOSE),ABS(LOW-CLOSE)])
     df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)
     # TR=SUM(TR,N1)
     df["TR_sum"] = df["TR"].rolling(n, min_periods=config.min_periods).sum()
     # DI+=PDM/TR
-    df[factor_name] = df["PDM"] / df["TR"]  # DI+
+    df[factor_name] = df["PDM"] / (df["TR"] + config.eps)  # DI+
     # DI-=NDM/TR
     # df['DI-'] = df['NDM'] / df['TR'] #DI-
 

@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
     # AR > 100 indicates buyers dominated (close above open); AR < 100 indicates sellers dominated.
     v1 = (df["high"] - df["open"]).rolling_sum(n, min_samples=config.min_periods)
     v2 = (df["open"] - df["low"]).rolling_sum(n, min_samples=config.min_periods)
-    _ar = 100 * v1 / v2
+    _ar = 100 * v1 / (v2 + config.eps)
     df = df.with_columns(pl.Series(factor_name, _ar))
 
     return df

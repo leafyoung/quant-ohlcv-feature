@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("neg", np.where(df["price"] <= df["price"].shift(1), df["MF"], 0)).fill_nan(0))
     df = df.with_columns(pl.Series("MF_NEG", df["neg"].rolling_sum(n, min_samples=config.min_periods)))
 
-    df = df.with_columns(pl.Series(factor_name, 100 - 100 / (1 + df["MF_POS"] / df["MF_NEG"])))
+    df = df.with_columns(pl.Series(factor_name, 100 - 100 / (1 + df["MF_POS"] / (df["MF_NEG"] + config.eps))))
 
     # delete intermediate data
     df = df.drop(["price", "MF", "pos", "MF_POS", "neg", "MF_NEG"])

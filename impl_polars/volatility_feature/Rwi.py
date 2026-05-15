@@ -25,7 +25,7 @@ def signal(df, n, factor_name, config):
     _rwih = (df["high"] - df["low"].shift(1)) / (np.sqrt(n) * atr)
     _rwil = (df["high"].shift(1) - df["low"]) / (np.sqrt(n) * atr)
 
-    _rwi = (df["close"] - _rwil) / (config.normalize_eps + _rwih - _rwil)
+    _rwi = (df["close"] - _rwil) / (config.eps + _rwih - _rwil)
     df = df.with_columns(pl.Series(factor_name, _rwi))
 
     return df

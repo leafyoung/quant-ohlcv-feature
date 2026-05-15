@@ -17,8 +17,8 @@ def signal(df, n, factor_name, config):
             "RC",
             100
             * (
-                (df["close"] - df["close"].shift(n)) / df["close"].shift(n)
-                + (df["close"] - df["close"].shift(2 * n)) / df["close"].shift(2 * n)
+                (df["close"] - df["close"].shift(n)) / (df["close"].shift(n) + config.eps)
+                + (df["close"] - df["close"].shift(2 * n)) / (df["close"].shift(2 * n) + config.eps)
             ),
         )
     )
@@ -27,7 +27,7 @@ def signal(df, n, factor_name, config):
     # bbw
     df = df.with_columns(pl.Series("median", df["close"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, ddof=config.ddof, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("bbw", (df["std"] / df["median"])))
+    df = df.with_columns(pl.Series("bbw", (df["std"] / (df["median"] + config.eps))))
 
     # corr
     df = df.with_columns(pl.Series("corr", ta.CORREL(df["close"], df["volume"], n) + 1))

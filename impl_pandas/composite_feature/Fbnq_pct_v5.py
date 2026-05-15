@@ -15,7 +15,7 @@ def signal(df, n, factor_name, config):
         # volatility
         df["BbwOri"] += (
             df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
-            / df["close"].rolling(n, min_periods=config.min_periods).mean()
+            / (df["close"].rolling(n, min_periods=config.min_periods).mean() + config.eps)
         )
     # momentum
     df["Fbnq_mean"] = df["Fbnq_mean"] / len(params)
@@ -26,6 +26,6 @@ def signal(df, n, factor_name, config):
 
     # momentum * volatility
     df[factor_name] = df["Fbnq_mean"] * df["BbwOri"]
-    del df["Fbnq_mean"], df["BbwOri"]
+    df = df.drop(columns=["Fbnq_mean", "BbwOri"])
 
     return df

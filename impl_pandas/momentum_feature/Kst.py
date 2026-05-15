@@ -21,7 +21,7 @@ def signal(df, n, factor_name, config):
     df["KST_IND"] = df["ROC_MA1"] + df["ROC_MA2"] * 2 + df["ROC_MA3"] * 3 + df["ROC_MA4"] * 4
     df["KST"] = df["KST_IND"].rolling(n, min_periods=config.min_periods).mean()
     # normalize
-    df[factor_name] = df["KST_IND"] / df["KST"]
+    df[factor_name] = df["KST_IND"] / (df["KST"] + config.eps)
 
     del df["ROC1"]
     del df["ROC_MA1"]

@@ -3,7 +3,6 @@ import pandas as pd
 
 def signal(df, n, factor_name, config):
     # Pvt_v3 indicator
-    eps = config.eps
     """
     PVT=(CLOSE-REF(CLOSE,1))/REF(CLOSE,1)*VOLUME
     PVT_MA1=MA(PVT,N1)
@@ -19,7 +18,7 @@ def signal(df, n, factor_name, config):
     df["PVT"] = df["close"].pct_change() * df["volume"]
     # normalize
     df["PVT_score"] = (df["PVT"] - df["PVT"].rolling(n, min_periods=config.min_periods).mean()) / (
-        df["PVT"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof) + eps
+        df["PVT"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof) + config.eps
     )
     df["PVT_sum"] = df["PVT_score"].rolling(n, min_periods=config.min_periods).sum()
     pvt_ma1 = df["PVT_sum"].rolling(n, min_periods=config.min_periods).mean()

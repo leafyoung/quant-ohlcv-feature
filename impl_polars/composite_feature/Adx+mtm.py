@@ -25,14 +25,14 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("PDM", df["XPDM"].rolling_sum(n, min_samples=config.min_periods)))
 
     df = df.with_columns(pl.Series("c1", abs(df["high"] - df["low"])))
-    df = df.with_columns(pl.Series("c2", abs(df["high"] - df["close"])))
-    df = df.with_columns(pl.Series("c3", abs(df["low"] - df["close"])))
+    df = df.with_columns(pl.Series("c2", abs(df["high"] - df["close"].shift(1))))
+    df = df.with_columns(pl.Series("c3", abs(df["low"] - df["close"].shift(1))))
     df = df.with_columns(TR=pl.max_horizontal([pl.col("c1"), pl.col("c2"), pl.col("c3")]))
 
     df = df.with_columns(pl.Series("TR_sum", df["TR"].rolling_sum(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("DI+", df["PDM"] / df["TR_sum"]))
+    df = df.with_columns(pl.Series("DI+", df["PDM"] / (df["TR_sum"] + config.eps)))
 
-    df = df.with_columns(pl.Series("mtm", df["close"] / df["close"].shift(n) - 1))
+    df = df.with_columns(pl.Series("mtm", df["close"] / (df["close"].shift(n) + config.eps) - 1))
     df = df.with_columns(pl.Series("mtm_rolling", df["mtm"].rolling_mean(n, min_samples=config.min_periods)))
 
     df = df.with_columns(pl.Series(factor_name, df["DI+"] * df["mtm_rolling"]))

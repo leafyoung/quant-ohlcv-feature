@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Dpo
-    eps = config.eps
     """
     N=20
     DPO=CLOSE-REF(MA(CLOSE,N),N/2+1)
@@ -16,7 +15,7 @@ def signal(df, n, factor_name, config):
 
     df = df.with_columns(pl.Series("median", df["close"].rolling_mean(n, min_samples=config.min_periods)))
     df = df.with_columns(
-        pl.Series(factor_name, (df["close"] - df["median"].shift(int(n / 2) + 1)) / (df["median"] + eps))
+        pl.Series(factor_name, (df["close"] - df["median"].shift(int(n / 2) + 1)) / (df["median"] + config.eps))
     )
 
     df = df.drop("median")

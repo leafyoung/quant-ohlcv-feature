@@ -12,7 +12,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("divnum", df["high"] - df["low"]))
     df = df.with_columns(pl.Series("divnum", df["divnum"].replace(0, np.nan)))
     df = df.with_columns(
-        pl.Series("temp", (2 * df["close"] - df["high"] - df["low"]) / df["divnum"] * df["quote_volume"])
+        pl.Series("temp", (2 * df["close"] - df["high"] - df["low"]) / (df["divnum"] + config.eps) * df["quote_volume"])
     )
     df = df.with_columns(pl.Series(factor_name, df["temp"].rolling_sum(n, min_samples=config.min_periods)))
 

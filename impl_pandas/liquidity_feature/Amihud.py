@@ -11,14 +11,10 @@ def signal(df, n, factor_name, config):
     df.loc[df["route_1"] > df["route_2"], "intraday_shortest_path"] = df["route_2"]
     df.loc[df["route_1"] <= df["route_2"], "intraday_shortest_path"] = df["route_1"]
     df["normalized_shortest_path"] = df["intraday_shortest_path"] / df["open"]
-    df["liquidity_premium"] = df["quote_volume"] / df["normalized_shortest_path"]
+    df["liquidity_premium"] = df["quote_volume"] / (df["normalized_shortest_path"] + config.eps)
 
     df[factor_name] = df["liquidity_premium"].rolling(n, min_periods=2).mean()
 
-    del df["route_1"]
-    del df["route_2"]
-    del df["intraday_shortest_path"]
-    del df["normalized_shortest_path"]
-    del df["liquidity_premium"]
+    df = df.drop(columns=["route_1", "route_2", "intraday_shortest_path", "normalized_shortest_path", "liquidity_premium"])
 
     return df

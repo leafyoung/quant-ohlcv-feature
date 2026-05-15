@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
     df["c3"] = abs(df["low"] - df["close"].shift(1))  # ABS(LOW-REF(CLOSE,1))
     df["TR"] = df[["c1", "c2", "c3"]].max(axis=1)
     df["sma"] = sma(df, column="close", k=n, config=config)
-    df["STR"] = df["TR"] / df["sma"]
+    df["STR"] = df["TR"] / (df["sma"] + config.eps)
 
     # separate bull/bear amplitude
     df["trUp"] = np.where(df["close"] > df["close"].shift(1), df["STR"], 0)
@@ -52,8 +52,6 @@ def signal(df, n, factor_name, config):
     df[factor_name] = df["fgi"]
 
     # delete extra columns
-    del df["c1"], df["c2"], df["c3"], df["TR"], df["STR"], df["sma"]
-    del df["trUp"], df["trDn"], df["fastDiff"], df["slowDiff"], df["FastMinusSlow"], df["fgi"]
-    del df["wmatrUp1"], df["wmatrDn1"], df["wmatrUp2"], df["wmatrDn2"]
+    df = df.drop(columns=["c1", "c2", "c3", "TR", "STR", "sma", "trUp", "trDn", "fastDiff", "slowDiff", "FastMinusSlow", "fgi", "wmatrUp1", "wmatrDn1", "wmatrUp2", "wmatrDn2"])
 
     return df

@@ -13,7 +13,7 @@ def signal(df, n, factor_name, config):
     scores_high = pl.Series(
         np.where(
             df["close"] - df["open"].shift(n) > 0,
-            1 - df["close"] / df["high"].rolling_max(n, min_samples=config.min_periods),
+            1 - df["close"] / (df["high"].rolling_max(n, min_samples=config.min_periods) + config.eps),
             0,
         )
     )
@@ -22,7 +22,7 @@ def signal(df, n, factor_name, config):
     scores_low = pl.Series(
         np.where(
             df["close"] - df["open"].shift(n) < 0,
-            1 - df["close"] / df["low"].rolling_min(n, min_samples=config.min_periods),
+            1 - df["close"] / (df["low"].rolling_min(n, min_samples=config.min_periods) + config.eps),
             0,
         )
     )

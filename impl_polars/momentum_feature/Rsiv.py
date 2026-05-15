@@ -23,7 +23,7 @@ def signal(df, n, factor_name, config):
     )
     df = df.with_columns(pl.Series("SUMUP", df["VOLUP"].rolling_sum(n, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("SUMDOWN", df["VOLDOWN"].rolling_sum(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series(factor_name, df["SUMUP"] / (df["SUMUP"] + df["SUMDOWN"]) * 100))
+    df = df.with_columns(pl.Series(factor_name, df["SUMUP"] / (df["SUMUP"] + df["SUMDOWN"] + config.eps) * 100))
 
     df = df.drop("VOLUP")
     df = df.drop("VOLDOWN")

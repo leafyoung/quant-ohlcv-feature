@@ -4,7 +4,7 @@ def signal(df, n, factor_name, config):
     #          HOURLY_VOL = HIGH/LOW-1; result = MA(MTM,N) * (VOLATILITY + MA(HOURLY_VOL,N))
     # Amplifies the momentum mean by a combined volatility measure (long-range + average intrabar).
     # High values indicate strong directional momentum in a high-volatility environment.
-    df["mtm"] = df["close"] / df["close"].shift(n) - 1
+    df["mtm"] = df["close"] / (df["close"].shift(n) + config.eps) - 1
     df["volatility"] = (
         df["high"].rolling(n, min_periods=config.min_periods).max()
         / df["low"].rolling(n, min_periods=config.min_periods).min()

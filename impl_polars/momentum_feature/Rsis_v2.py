@@ -23,9 +23,9 @@ def signal(df, n, factor_name, config):
     close_diff_pos = pl.Series(close_diff_pos).fill_nan(None)
     rsi_a = pl.Series(close_diff_pos).ewm_mean(alpha=1 / (4 * n), adjust=config.ewm_adjust)
     rsi_b = (df["close"] - df["close"].shift(1)).abs().ewm_mean(alpha=1 / (4 * n), adjust=config.ewm_adjust)
-    rsi = 100 * rsi_a / (config.normalize_eps + rsi_b)
+    rsi = 100 * rsi_a / (config.eps + rsi_b)
     rsi_min = pl.Series(rsi).rolling_min(int(4 * n), min_samples=config.min_periods)
     rsi_max = pl.Series(rsi).rolling_max(int(4 * n), min_samples=config.min_periods)
-    df = df.with_columns(pl.Series(factor_name, 100 * (rsi - rsi_min) / (config.normalize_eps + rsi_max - rsi_min)))
+    df = df.with_columns(pl.Series(factor_name, 100 * (rsi - rsi_min) / (config.eps + rsi_max - rsi_min)))
 
     return df

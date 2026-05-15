@@ -16,7 +16,7 @@ def signal(df, n, factor_name, config):
 
     # calculate PMO
     df = df.with_columns(
-        pl.Series("ROC", (df["TEMA"] - df["TEMA"].shift(1)) / df["TEMA"].shift(1) * 100)
+        pl.Series("ROC", (df["TEMA"] - df["TEMA"].shift(1)) / (df["TEMA"].shift(1) + config.eps) * 100)
     )  # use TEMA moving average instead of original CLOSE
     df = df.with_columns(
         pl.Series("ROC_MA", df["ROC"].rolling_mean(n, min_samples=config.min_periods))

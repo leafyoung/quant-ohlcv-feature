@@ -2,7 +2,6 @@ import numpy as np
 
 
 def signal(df, n, factor_name, config):
-    eps = config.eps
     # Rsimean indicator (Rolling mean of RSI)
     # Formula: RSI = A/(A+B) where A=SUM(up_diff,N), B=SUM(down_diff,N); result = MA(RSI, N)
     # Smooths RSI with a rolling mean to reduce whipsaws. Useful as a trend-following version of RSI.
@@ -12,7 +11,7 @@ def signal(df, n, factor_name, config):
     df["down"] = np.where(close_dif < 0, abs(close_dif), 0)
     a = df["up"].rolling(n, min_periods=config.min_periods).sum()
     b = df["down"].rolling(n, min_periods=config.min_periods).sum()
-    df["rsi"] = a / (a + b + eps)
+    df["rsi"] = a / (a + b + config.eps)
     df[factor_name] = df["rsi"].rolling(n, min_periods=config.min_periods).mean()
 
     # remove redundant columns

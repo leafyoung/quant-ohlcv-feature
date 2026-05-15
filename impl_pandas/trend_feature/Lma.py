@@ -8,7 +8,7 @@ def signal(df, n, factor_name, config):
     """
     df["low_ma"] = df["low"].rolling(n, min_periods=config.min_periods).mean()
     # normalize
-    df[factor_name] = df["low"] / df["low_ma"] - 1
+    df[factor_name] = df["low"] / (df["low_ma"] + config.eps) - 1
 
     del df["low_ma"]
 

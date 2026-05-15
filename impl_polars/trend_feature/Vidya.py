@@ -25,7 +25,7 @@ def signal(df, n, factor_name, config):
         pl.Series("abs_diff_close_sum", df["abs_diff_close"].rolling_sum(n, min_samples=config.min_periods))
     )  # SUM(ABS(CLOSE-REF(CLOSE,1))
     # VI=ABS(CLOSE-REF(CLOSE,N))/SUM(ABS(CLOSE-REF(CLOSE,1)),N)
-    VI = df["abs_diff_close_n"] / df["abs_diff_close_sum"]
+    VI = df["abs_diff_close_n"] / (df["abs_diff_close_sum"] + config.eps)
     # VIDYA=VI*CLOSE+(1-VI)*REF(CLOSE,1)
     VIDYA = VI * df["close"] + (1 - VI) * df["close"].shift(1)
     # normalize

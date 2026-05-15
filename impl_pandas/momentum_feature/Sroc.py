@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # Sroc
-    eps = config.eps
     """
     N=13
     M=21
@@ -10,6 +9,6 @@ def signal(df, n, factor_name, config):
     """
     ema = df["close"].ewm(span=n, adjust=config.ewm_adjust).mean()
     ref = ema.shift(2 * n)
-    df[factor_name] = (ema - ref) / (ref + eps)
+    df[factor_name] = (ema - ref) / (ref + config.eps)
 
     return df

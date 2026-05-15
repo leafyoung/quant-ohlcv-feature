@@ -31,8 +31,8 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("sum_neg", df["VMNEG"].rolling_sum(n, min_samples=config.min_periods)))
 
     df = df.with_columns(pl.Series("sum_tr", df["TR"].rolling_sum(n, min_samples=config.min_periods)))
-    df = df.with_columns(pl.Series("Vi+", df["sum_pos"] / df["sum_tr"]))
-    df = df.with_columns(pl.Series("Vi-", df["sum_neg"] / df["sum_tr"]))
+    df = df.with_columns(pl.Series("Vi+", df["sum_pos"] / (df["sum_tr"] + config.eps)))
+    df = df.with_columns(pl.Series("Vi-", df["sum_neg"] / (df["sum_tr"] + config.eps)))
     df = df.with_columns(pl.Series(factor_name, df["Vi+"] - df["Vi-"]))
     # df[f'Vi+_bh_{n}'] = df['Vi+'].shift(1)
     # df[f'Vi-_bh_{n}'] = df['Vi-'].shift(1)
