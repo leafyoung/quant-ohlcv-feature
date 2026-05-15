@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # Pvt_v2 indicator
-    eps = config.eps
     """
     PVT=(CLOSE-REF(CLOSE,1))/REF(CLOSE,1)*VOLUME
     PVT_MA1=MA(PVT,N1)
@@ -17,7 +16,7 @@ def signal(df, n, factor_name, config):
     # normalize
 
     df["PVT_score"] = (df["PVT"] - df["PVT"].rolling(n, min_periods=config.min_periods).mean()) / (
-        df["PVT"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof) + eps
+        df["PVT"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof) + config.eps
     )
     df[factor_name] = df["PVT_score"].rolling(n, min_periods=config.min_periods).sum()
 

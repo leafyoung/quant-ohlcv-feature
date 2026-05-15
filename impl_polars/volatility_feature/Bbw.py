@@ -9,7 +9,6 @@ def signal(df, n, factor_name, config):
     #          result = BBW_CHG * (CLOSE/REF(CLOSE,N) - 1) * RSI
     # Combines Bollinger bandwidth change (volatility expansion/contraction) with N-period
     # momentum and RSI. Positive values indicate expanding volatility with upside momentum.
-    eps = config.eps
     close_dif = df["close"].diff()
     df = df.with_columns(pl.Series("up", np.where(close_dif > 0, close_dif, 0)).fill_nan(None))
     df = df.with_columns(pl.Series("down", np.where(close_dif < 0, abs(close_dif), 0)).fill_nan(None))
@@ -20,7 +19,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, ddof=config.ddof, min_samples=config.min_periods)))
     df = df.with_columns(pl.Series("bbw", (df["std"] / (df["median"] + config.eps)).diff(n)))
     df = df.with_columns(
-        pl.Series(factor_name, (df["bbw"]) * (df["close"] / (df["close"].shift(n) + config.eps) - 1 + eps) * df["rsi"])
+        pl.Series(factor_name, (df["bbw"]) * (df["close"] / (df["close"].shift(n) + config.eps) - 1 + config.eps) * df["rsi"])
     )
 
     df = df.drop(["up", "down", "rsi", "median"])

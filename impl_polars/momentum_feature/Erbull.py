@@ -14,10 +14,9 @@ def signal(df, n, factor_name, config):
     If BearPower crosses above 0, a buy signal is generated;
     if BullPower crosses below 0, a sell signal is generated.
     """
-    eps = config.eps
     ema = df["close"].ewm_mean(span=n, adjust=config.ewm_adjust)  # EMA(CLOSE,N)
     bull_power = df["high"] - ema  # higher means uptrend (bull market) BullPower=HIGH-EMA(CLOSE,N)
     df["low"] - ema  # BearPower=LOW-EMA(CLOSE,N) -- noqa: F841
-    df = df.with_columns(pl.Series(factor_name, bull_power / (ema + eps)))  # normalize
+    df = df.with_columns(pl.Series(factor_name, bull_power / (ema + config.eps)))  # normalize
 
     return df

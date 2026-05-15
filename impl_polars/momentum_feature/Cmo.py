@@ -4,7 +4,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Cmo
-    eps = config.eps
     # MAX(CLOSE-REF(CLOSE,1), 0
     df = df.with_columns(
         pl.Series(
@@ -23,7 +22,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("sum_sd", df["max_sd"].rolling_sum(n, min_samples=config.min_periods)))
     # CMO=(SU-SD)/(SU+SD)*100
     df = df.with_columns(
-        pl.Series(factor_name, (df["sum_su"] - df["sum_sd"]) / (df["sum_su"] + df["sum_sd"] + eps) * 100)
+        pl.Series(factor_name, (df["sum_su"] - df["sum_sd"]) / (df["sum_su"] + df["sum_sd"] + config.eps) * 100)
     )
 
     # delete extra columns

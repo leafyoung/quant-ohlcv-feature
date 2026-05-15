@@ -11,10 +11,9 @@ def signal(df, n, factor_name, config):
     factor = VWAP / MA - 1 (normalize)
 
     """
-    eps = config.eps
     df = df.with_columns(pl.Series("vwap", df["quote_volume"] / df["volume"]))
     ma = df["vwap"].rolling_mean(n, min_samples=config.min_periods)  # compute moving average
-    df = df.with_columns(pl.Series(factor_name, df["vwap"] / (ma + eps) - 1))
+    df = df.with_columns(pl.Series(factor_name, df["vwap"] / (ma + config.eps) - 1))
 
     df = df.drop("vwap")
 

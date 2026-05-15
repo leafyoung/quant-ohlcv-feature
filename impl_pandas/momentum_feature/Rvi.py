@@ -28,7 +28,7 @@ def signal(df, n, factor_name, config):
     df["dstd"] = np.where(df["close"] < df["close"].shift(1), df["std"], 0)
     df["sum_dstd"] = df["dstd"].rolling(2 * n, min_periods=config.min_periods).sum()
 
-    df[factor_name] = df["sum_ustd"] / (df["sum_ustd"] + df["sum_dstd"]) * 100
+    df[factor_name] = df["sum_ustd"] / (df["sum_ustd"] + df["sum_dstd"] + config.eps) * 100
 
     del df["std"]
     del df["ustd"]

@@ -8,10 +8,9 @@ def signal(df, n, factor_name, config):
     # Force Index quantifies buying/selling force by combining price change magnitude with volume.
     # Z-score normalization removes scale effects; EMA smoothing reduces noise.
     # Positive values indicate sustained upward force; negative values indicate downward force.
-    eps = config.eps
     _fi = df["volume"] * (df["close"] - df["close"].shift(1))
     _fi_zscore = (_fi - _fi.rolling(n, min_periods=config.min_periods).mean()) / (
-        _fi.rolling(n, min_periods=config.min_periods).std(ddof=config.ddof) + eps
+        _fi.rolling(n, min_periods=config.min_periods).std(ddof=config.ddof) + config.eps
     )
     s = _fi_zscore.ewm(span=n, adjust=config.ewm_adjust, min_periods=config.min_periods).mean()
     df[factor_name] = pd.Series(s)

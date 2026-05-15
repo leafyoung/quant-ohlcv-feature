@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Pac indicator
-    eps = config.eps
     """
     N1=20
     N2=20
@@ -17,7 +16,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("width", df["upper"] - df["lower"]))
     df = df.with_columns(pl.Series("width_ma", df["width"].rolling_mean(n, min_samples=config.min_periods)))
 
-    df = df.with_columns(pl.Series(factor_name, df["width"] / (df["width_ma"] + eps) - 1))
+    df = df.with_columns(pl.Series(factor_name, df["width"] / (df["width_ma"] + config.eps) - 1))
 
     # remove redundant columns
     df = df.drop(["upper", "lower", "width", "width_ma"])

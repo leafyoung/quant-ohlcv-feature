@@ -18,7 +18,7 @@ def signal(df, n, factor_name, config):
     df["VOLDOWN"] = np.where(df["close"] < df["close"].shift(1), df["volume"], 0)
     df["SUMUP"] = df["VOLUP"].rolling(n, min_periods=config.min_periods).sum()
     df["SUMDOWN"] = df["VOLDOWN"].rolling(n, min_periods=config.min_periods).sum()
-    df[factor_name] = df["SUMUP"] / (df["SUMUP"] + df["SUMDOWN"]) * 100
+    df[factor_name] = df["SUMUP"] / (df["SUMUP"] + df["SUMDOWN"] + config.eps) * 100
 
     del df["VOLUP"]
     del df["VOLDOWN"]

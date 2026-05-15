@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Sroc
-    eps = config.eps
     """
     N=13
     M=21
@@ -13,6 +12,6 @@ def signal(df, n, factor_name, config):
     """
     ema = df["close"].ewm_mean(span=n, adjust=config.ewm_adjust)
     ref = ema.shift(2 * n)
-    df = df.with_columns(pl.Series(factor_name, (ema - ref) / (ref + eps)))
+    df = df.with_columns(pl.Series(factor_name, (ema - ref) / (ref + config.eps)))
 
     return df

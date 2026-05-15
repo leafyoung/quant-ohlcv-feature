@@ -5,10 +5,9 @@ def signal(df, n, factor_name, config):
     # Turtle indicator (Turtle channel breakout distance)
     # Formula: UP = MAX(MAX(OPEN,CLOSE), N) shifted by 1; DN = MIN(MIN(OPEN,CLOSE), N) shifted by 1
     #          d = CLOSE - UP if above channel; CLOSE - DN if below channel; 0 if inside
-    #          result = d / (UP - DN + eps)
+    #          result = d / (UP - DN + config.eps)
     # Measures how far price has broken out of the N-period Turtle channel, normalized by channel width.
     # Positive values signal upward breakout; negative signal downward breakout; 0 means inside channel.
-    eps = config.eps
     # calculate Turtle
     df = df.with_columns(open_close_high=pl.max_horizontal([pl.col("open"), pl.col("close")]))
     df = df.with_columns(open_close_low=pl.min_horizontal([pl.col("open"), pl.col("close")]))
@@ -38,7 +37,7 @@ def signal(df, n, factor_name, config):
         .otherwise(pl.lit(0.0))
         .alias("d")
     )
-    df = df.with_columns(pl.Series(factor_name, df["d"] / (df["up"] - df["dn"] + eps)))
+    df = df.with_columns(pl.Series(factor_name, df["d"] / (df["up"] - df["dn"] + config.eps)))
 
     df = df.drop(["up", "dn", "std", "tr", "atr", "d"])
     df = df.drop(["open_close_high", "open_close_low"])

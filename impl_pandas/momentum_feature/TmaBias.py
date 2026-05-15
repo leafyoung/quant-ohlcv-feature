@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # TmaBias
-    eps = config.eps
     """
     N=20
     CLOSE_MA=MA(CLOSE,N)
@@ -11,6 +10,6 @@ def signal(df, n, factor_name, config):
     """
     ma = df["close"].rolling(n, min_periods=config.min_periods).mean()  # CLOSE_MA=MA(CLOSE,N)
     tma = ma.rolling(n, min_periods=config.min_periods).mean()  # TMA=MA(CLOSE_MA,N)
-    df[factor_name] = df["close"] / (tma + eps) - 1
+    df[factor_name] = df["close"] / (tma + config.eps) - 1
 
     return df

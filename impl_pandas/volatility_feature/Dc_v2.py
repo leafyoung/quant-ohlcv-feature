@@ -1,5 +1,4 @@
 def signal(df, n, factor_name, config):
-    eps = config.eps
     # Dc indicator
     """
     N=20
@@ -13,6 +12,6 @@ def signal(df, n, factor_name, config):
     lower = df["low"].rolling(n, min_periods=config.min_periods).min()
     middle = (upper + lower) / 2
     # normalize (remove units)
-    df[factor_name] = (df["close"] - middle) / (middle + eps)
+    df[factor_name] = (df["close"] - middle) / (middle + config.eps)
 
     return df

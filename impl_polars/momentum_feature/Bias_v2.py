@@ -8,7 +8,6 @@ def signal(df, n, factor_name, config):
     #          CLOSE_HL = (HIGH + LOW)/2 * VOLUME; result = CLOSE_HL / MA - 1
     # Uses linear regression followed by EMA to smooth the close, then computes bias of
     # volume-weighted midpoint price relative to the smoothed MA.
-    eps = config.eps
     # calculate linear regression
     df = df.with_columns(pl.Series("new_close", ta.LINEARREG(df["close"], timeperiod=n)))
     # smooth the curve again with EMA
@@ -20,7 +19,7 @@ def signal(df, n, factor_name, config):
     # df['close'] =   (df['high'] + df['low']) / 2 * df['volume']
     close = (df["high"] + df["low"]) / 2 * df["volume"]
     # calculate bias
-    df = df.with_columns(pl.Series(factor_name, close / (ma + eps) - 1))
+    df = df.with_columns(pl.Series(factor_name, close / (ma + config.eps) - 1))
 
     df = df.drop("new_close")
 

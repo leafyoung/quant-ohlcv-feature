@@ -7,7 +7,6 @@ def signal(df, n, factor_name, config):
     #          RSJ = (RV+ - RV-) / RV
     # Measures the asymmetry between upside and downside realized variance.
     # Positive values indicate right-skewed returns (more upside variance); negative indicate left-skewed.
-    eps = config.eps
     # calculate returns
     df["return"] = df["close"] / (df["close"].shift(1) + config.eps) - 1
 
@@ -24,7 +23,7 @@ def signal(df, n, factor_name, config):
     df["rv-"] = df["pow_negetive_data"].rolling(window=n, min_periods=config.min_periods).sum()
 
     # calculate RSJ
-    df[factor_name] = (df["rv+"] - df["rv-"]) / (df["rv"] + eps)
+    df[factor_name] = (df["rv+"] - df["rv-"]) / (df["rv"] + config.eps)
 
     # remove redundant columns
     del df["return"], df["rv"], df["positive_data"], df["negative_data"]

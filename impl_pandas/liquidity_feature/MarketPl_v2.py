@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # MarketPl_v2 indicator
-    eps = config.eps
     # MarketPl_v2 indicator (Market Placement with VWAP-validity check)
     # Formula: AVG_P = QUOTE_VOLUME / VOLUME (if quote_volume > 0, else REF(CLOSE,1))
     #          AVG_COST = EMA(QUOTE_VOLUME,N)/EMA(VOLUME,N) if LOW <= AVG_P <= HIGH, else EMA((O+L+C)/3,N)
@@ -25,7 +24,7 @@ def signal(df, n, factor_name, config):
     # Fallback for VWAP outside candle range → use cost_ema
     condition_out = (df["avg_p"] > df["high"] + tol) | (df["avg_p"] < df["low"] - tol)
     df.loc[condition_out, "avg_holding_cost"] = cost_ema
-    df[factor_name] = df["close"] / (df["avg_holding_cost"] + eps) - 1
+    df[factor_name] = df["close"] / (df["avg_holding_cost"] + config.eps) - 1
 
     del df["avg_holding_cost"]
 

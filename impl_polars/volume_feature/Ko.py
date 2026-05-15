@@ -4,7 +4,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Ko indicator
-    eps = config.eps
     # Ko indicator (Klinger Oscillator variant)
     # Formula: PRICE = (HIGH+LOW+CLOSE)/3; V = +VOLUME if PRICE > REF(PRICE,1) else -VOLUME
     #          KO = EMA(V, N) - EMA(V, N*1.618); normalized to [0, 1]
@@ -26,7 +25,7 @@ def signal(df, n, factor_name, config):
             / (
                 df["KO"].rolling_max(n, min_samples=config.min_periods)
                 - df["KO"].rolling_min(n, min_samples=config.min_periods)
-                + eps
+                + config.eps
             ),
         )
     )

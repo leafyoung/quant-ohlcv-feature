@@ -3,7 +3,6 @@ import numpy as np
 
 def signal(df, n, factor_name, config):
     # Rsi
-    eps = config.eps
     """
     CLOSEUP=IF(CLOSE>REF(CLOSE,1),CLOSE-REF(CLOSE,1),0)
     CLOSEDOWN=IF(CLOSE<REF(CLOSE,1),ABS(CLOSE-REF(CLOSE,1)),0)
@@ -31,7 +30,7 @@ def signal(df, n, factor_name, config):
         df["down"].ewm(span=n, adjust=config.ewm_adjust).mean()
     )  # SMA(CLOSEDOWN,N,1) calculate sma of downward moves in the period
     # RSI=100*CLOSEUP_MA/(CLOSEUP_MA+CLOSEDOWN_MA)  omit multiplication by 100 for normalization
-    df[factor_name] = A / (A + B + eps)
+    df[factor_name] = A / (A + B + config.eps)
 
     # remove redundant columns
     del df["up"], df["down"]

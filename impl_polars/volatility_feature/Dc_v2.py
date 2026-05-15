@@ -2,7 +2,6 @@ import polars as pl
 
 
 def signal(df, n, factor_name, config):
-    eps = config.eps
     # Dc indicator
     """
     N=20
@@ -16,6 +15,6 @@ def signal(df, n, factor_name, config):
     lower = df["low"].rolling_min(n, min_samples=config.min_periods)
     middle = (upper + lower) / 2
     # normalize (remove units)
-    df = df.with_columns(pl.Series(factor_name, (df["close"] - middle) / (middle + eps)))
+    df = df.with_columns(pl.Series(factor_name, (df["close"] - middle) / (middle + config.eps)))
 
     return df

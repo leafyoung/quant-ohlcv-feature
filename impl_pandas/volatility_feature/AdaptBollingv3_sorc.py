@@ -6,7 +6,6 @@ def signal(df, n, factor_name, config):
     AdaptBollingv3
     Use Sroc_v2 instead of mtm_mean as the B-selection factor
     """
-    eps = config.eps
 
     n1 = int(n)
 
@@ -17,7 +16,7 @@ def signal(df, n, factor_name, config):
 
     ema = ta.KAMA(df["close"], n)
     ref = ema.shift(2 * n)
-    df["sorc"] = (ema - ref) / (ref + eps)
+    df["sorc"] = (ema - ref) / (ref + config.eps)
 
     # based on price ATR, calculate volatility factor wd_atr
     df["c1"] = df["high"] - df["low"]

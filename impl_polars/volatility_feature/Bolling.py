@@ -8,7 +8,6 @@ def signal(df, n, factor_name, config):
     #          result = distance / STD
     # Measures how far the price has broken outside the Bollinger bands, normalized by std.
     # Positive values indicate breakout above upper band; negative values indicate breakdown below lower band.
-    eps = config.eps
     # calculate Bollinger upper and lower bands
     df = df.with_columns(pl.Series("std", df["close"].rolling_std(n, min_samples=config.min_periods, ddof=config.ddof)))
     df = df.with_columns(pl.Series("ma", df["close"].rolling_mean(n, min_samples=config.min_periods)))
@@ -23,7 +22,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(
         pl.when(condition_2).then(df["close"] - df["lower"]).otherwise(pl.col("distance")).alias("distance")
     )
-    df = df.with_columns(pl.Series(factor_name, df["distance"] / (df["std"] + eps)))
+    df = df.with_columns(pl.Series(factor_name, df["distance"] / (df["std"] + config.eps)))
 
     # delete extra columns
     df = df.drop(["std", "ma", "upper", "lower"])

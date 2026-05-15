@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Wc indicator
-    eps = config.eps
     """
     WC=(HIGH+LOW+2*CLOSE)/4
     N1=20
@@ -17,7 +16,7 @@ def signal(df, n, factor_name, config):
     df = df.with_columns(pl.Series("ema1", WC.ewm_mean(span=n, adjust=config.ewm_adjust)))
     df = df.with_columns(pl.Series("ema2", WC.ewm_mean(span=2 * n, adjust=config.ewm_adjust)))
     # normalize
-    df = df.with_columns(pl.Series(factor_name, df["ema1"] / (df["ema2"] + eps) - 1))
+    df = df.with_columns(pl.Series(factor_name, df["ema1"] / (df["ema2"] + config.eps) - 1))
 
     # remove redundant columns
     df = df.drop(["ema1", "ema2"])

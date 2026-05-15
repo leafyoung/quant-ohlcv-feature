@@ -3,13 +3,12 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Ax10 indicator (TMA momentum × ATR volatility × taker buy composite)
-    # Formula: TMA = MA(MA((HIGH+LOW)/2, N), N); MTM = CLOSE/(TMA+eps) - 1
+    # Formula: TMA = MA(MA((HIGH+LOW)/2, N), N); MTM = CLOSE/(TMA+config.eps) - 1
     #          WD_ATR = ATR(N) / MA(CLOSE,N)  (normalized ATR)
     #          TAKER_BUY = MA(TAKER_BUY_QUOTE_VOLUME / MA(QUOTE_VOLUME,N) * 100, N)
     #          result = MA(MTM,N) * WD_ATR * TAKER_BUY * 1e8
     # Composite factor combining triangular MA momentum, ATR volatility, and taker buy pressure.
     # Scaled by 1e8 to amplify small values for practical use.
-    eps = config.eps
 
     n1 = int(n)
 
@@ -18,7 +17,7 @@ def signal(df, n, factor_name, config):
 
     close_ma = ts.rolling_mean(n, min_samples=config.min_periods)
     tma = close_ma.rolling_mean(n, min_samples=config.min_periods)
-    df = df.with_columns(pl.Series("mtm", df["close"] / (tma + eps) - 1))
+    df = df.with_columns(pl.Series("mtm", df["close"] / (tma + config.eps) - 1))
 
     df = df.with_columns(pl.Series("mtm_mean", df["mtm"].rolling_mean(n1, min_samples=config.min_periods)))
 

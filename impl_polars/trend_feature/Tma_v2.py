@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Tma2
-    eps = config.eps
     """
     N=20
     CLOSE_MA=MA(CLOSE,N)
@@ -16,6 +15,6 @@ def signal(df, n, factor_name, config):
 
     close_ma = _ts.rolling_mean(n, min_samples=config.min_periods)
     tma = close_ma.rolling_mean(n, min_samples=config.min_periods)
-    df = df.with_columns(pl.Series(factor_name, df["close"] / (tma + eps) - 1))
+    df = df.with_columns(pl.Series(factor_name, df["close"] / (tma + config.eps) - 1))
 
     return df

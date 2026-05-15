@@ -4,11 +4,10 @@ def signal(df, n, factor_name, config):
     #          result = (UPPER - REF(UPPER, 1)) / MA
     # Measures how fast the Bollinger upper band is moving relative to the MA.
     # Positive values indicate the upper band is expanding (rising volatility); negative values indicate contraction.
-    eps = config.eps
     df["median"] = df["close"].rolling(n, min_periods=config.min_periods).mean()
     df["std"] = df["close"].rolling(n, min_periods=config.min_periods).std(ddof=config.ddof)
     df["upper"] = df["median"] + 0.5 * df["std"]
-    df[factor_name] = (df["upper"] - df["upper"].shift(1)) / (df["median"] + eps)
+    df[factor_name] = (df["upper"] - df["upper"].shift(1)) / (df["median"] + config.eps)
 
     # delete extra columns
     del df["median"], df["std"], df["upper"]

@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # Cv indicator
-    eps = config.eps
     """
     N=10
     H_L_EMA=EMA(HIGH-LOW,N)
@@ -11,7 +10,7 @@ def signal(df, n, factor_name, config):
     """
     # H_L_EMA=EMA(HIGH-LOW,N)
     df["H_L_ema"] = (df["high"] - df["low"]).ewm(span=n, adjust=config.ewm_adjust).mean()
-    df[factor_name] = (df["H_L_ema"] - df["H_L_ema"].shift(n)) / (df["H_L_ema"].shift(n) + eps) * 100
+    df[factor_name] = (df["H_L_ema"] - df["H_L_ema"].shift(n)) / (df["H_L_ema"].shift(n) + config.eps) * 100
 
     del df["H_L_ema"]
 

@@ -3,7 +3,6 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Tema indicator
-    eps = config.eps
     """
     N=20,40
     TEMA=3*EMA(CLOSE,N)-3*EMA(EMA(CLOSE,N),N)+EMA(EMA(EMA(CLOSE,N),N),N)
@@ -16,6 +15,6 @@ def signal(df, n, factor_name, config):
     # TEMA=3*EMA(CLOSE,N)-3*EMA(EMA(CLOSE,N),N)+EMA(EMA(EMA(CLOSE,N),N),N)
     df = df.with_columns(pl.Series("TEMA", 3 * df["ema"] - 3 * df["ema_ema"] + df["ema_ema_ema"]))
     # normalize
-    df = df.with_columns(pl.Series(factor_name, df["ema"] / (df["TEMA"] + eps) - 1))
+    df = df.with_columns(pl.Series(factor_name, df["ema"] / (df["TEMA"] + config.eps) - 1))
 
     return df

@@ -1,5 +1,4 @@
 def signal(df, n, factor_name, config):
-    eps = config.eps
     """
     N=20
     TR=MAX(HIGH-LOW,ABS(HIGH-REF(CLOSE,1)),ABS(LOW-REF(CLOSE,1)))
@@ -13,7 +12,7 @@ def signal(df, n, factor_name, config):
     df["_ATR"] = df["TR"].rolling(n, min_periods=config.min_periods).mean()  # ATR=MA(TR,N)
     df["middle"] = df["close"].rolling(n, min_periods=config.min_periods).mean()  # MIDDLE=MA(CLOSE,N)
     # normalize using ATR indicator
-    df[factor_name] = df["_ATR"] / (df["middle"] + eps)
+    df[factor_name] = df["_ATR"] / (df["middle"] + config.eps)
 
     del df["c1"]
     del df["c2"]

@@ -3,12 +3,11 @@ import polars as pl
 
 def signal(df, n, factor_name, config):
     # Sgcz indicator (Close vs rolling mean of High)
-    # Formula: HIGH_MA = MA(HIGH, N); result = (CLOSE - HIGH_MA) / (HIGH_MA + eps)
+    # Formula: HIGH_MA = MA(HIGH, N); result = (CLOSE - HIGH_MA) / (HIGH_MA + config.eps)
     # Measures how far the close price is below the rolling average high.
     # Negative values (typical) indicate close is below average high; values near 0 suggest close is near the high mean.
-    eps = config.eps
     high = df["high"].rolling_mean(n, min_samples=config.min_periods)
     close = df["close"]
-    df = df.with_columns(pl.Series(factor_name, (close - high) / (high + eps)))
+    df = df.with_columns(pl.Series(factor_name, (close - high) / (high + config.eps)))
 
     return df

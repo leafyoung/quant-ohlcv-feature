@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # VwapSignal indicator
-    eps = config.eps
     """
     # N=20
     # Typical=(HIGH+LOW+CLOSE)/3
@@ -14,8 +13,8 @@ def signal(df, n, factor_name, config):
     df["mf"] = df["volume"] * df["tp"]
     df["vol_sum"] = df["volume"].rolling(n, min_periods=config.min_periods).sum()
     df["mf_sum"] = df["mf"].rolling(n, min_periods=config.min_periods).sum()
-    df["vwap"] = df["mf_sum"] / (eps + df["vol_sum"])
-    df[factor_name] = df["tp"] / (df["vwap"] + eps) - 1
+    df["vwap"] = df["mf_sum"] / (config.eps + df["vol_sum"])
+    df[factor_name] = df["tp"] / (df["vwap"] + config.eps) - 1
 
     # remove redundant columns
     del df["tp"], df["mf"], df["vol_sum"], df["mf_sum"], df["vwap"]

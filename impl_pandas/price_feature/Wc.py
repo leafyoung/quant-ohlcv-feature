@@ -1,6 +1,5 @@
 def signal(df, n, factor_name, config):
     # Wc indicator
-    eps = config.eps
     """
     WC=(HIGH+LOW+2*CLOSE)/4
     N1=20
@@ -14,7 +13,7 @@ def signal(df, n, factor_name, config):
     df["ema1"] = WC.ewm(span=n, adjust=config.ewm_adjust).mean()  # EMA1=EMA(WC,N1)
     df["ema2"] = WC.ewm(span=2 * n, adjust=config.ewm_adjust).mean()  # EMA2=EMA(WC,N2)
     # normalize
-    df[factor_name] = df["ema1"] / (df["ema2"] + eps) - 1
+    df[factor_name] = df["ema1"] / (df["ema2"] + config.eps) - 1
 
     # remove redundant columns
     del df["ema1"], df["ema2"]
