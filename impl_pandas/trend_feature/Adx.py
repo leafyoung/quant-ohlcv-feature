@@ -52,18 +52,6 @@ def signal(df, n, factor_name, config):
     df[factor_name] = (df["PDM"] + df["NDM"]) / (df["TR"] + config.eps)
 
     # remove intermediate data
-    del df["max_high"]
-    del df["max_low"]
-    del df["XPDM"]
-    del df["PDM"]
-    del df["XNDM"]
-    del df["NDM"]
-    del df["c1"]
-    del df["c2"]
-    del df["c3"]
-    del df["TR"]
-    del df["TR_sum"]
-    del df["DI+"]
-    del df["DI-"]
+    df = df.drop(columns=["max_high", "max_low", "XPDM", "PDM", "XNDM", "NDM", "c1", "c2", "c3", "TR", "TR_sum", "DI+", "DI-"])
 
     return df

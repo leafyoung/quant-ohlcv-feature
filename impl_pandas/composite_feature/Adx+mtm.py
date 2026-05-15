@@ -27,16 +27,6 @@ def signal(df, n, factor_name, config):
 
     df[factor_name] = df["DI+"] * df["mtm"]
 
-    del df["max_high"]
-    del df["max_low"]
-    del df["XPDM"]
-    del df["PDM"]
-    del df["mtm"]
-    del df["c1"]
-    del df["c2"]
-    del df["c3"]
-    del df["TR"]
-    del df["TR_sum"]
-    del df["DI+"]
+    df = df.drop(columns=["max_high", "max_low", "XPDM", "PDM", "mtm", "c1", "c2", "c3", "TR", "TR_sum", "DI+"])
 
     return df

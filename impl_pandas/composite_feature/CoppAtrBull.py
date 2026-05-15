@@ -32,8 +32,6 @@ def signal(df, n, factor_name, config):
     # composite indicator
     df[factor_name] = df["RC_mean"] * df["ATR"] * df["taker_buy_mean"]
     # delete extra columns
-    del df["RC"], df["RC_mean"]
-    del df["median"], df["c1"], df["c2"], df["c3"], df["TR"], df["_ATR"], df["ATR"]
-    del df["vma"], df["taker_buy_ma"], df["taker_buy_mean"]
+    df = df.drop(columns=["RC", "RC_mean", "median", "c1", "c2", "c3", "TR", "_ATR", "ATR", "vma", "taker_buy_ma", "taker_buy_mean"])
 
     return df

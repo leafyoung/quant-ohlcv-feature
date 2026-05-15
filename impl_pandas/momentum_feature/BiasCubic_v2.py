@@ -20,6 +20,6 @@ def signal(df, n, factor_name, config):
     )
     df[factor_name] = df["mtm"].rolling(n, min_periods=config.min_periods).mean()
 
-    del df["ma_1"], df["ma_2"], df["ma_3"], df["bias_1"], df["bias_2"], df["bias_3"], df["mtm"]
+    df = df.drop(columns=["ma_1", "ma_2", "ma_3", "bias_1", "bias_2", "bias_3", "mtm"])
 
     return df

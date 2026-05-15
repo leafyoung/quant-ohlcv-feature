@@ -28,4 +28,6 @@ def signal(df, n, factor_name, config):
 
     df[factor_name] = df["mtm"] * df["s_mtm"] * df["bbw_mean"] * df["volatility"]
 
+    df = df.drop(columns=["ma", "std", "mtm", "s_mtm", "bbw", "bbw_mean", "volatility"])
+
     return df

@@ -26,6 +26,6 @@ def signal(df, n, factor_name, config):
 
     # momentum * volatility
     df[factor_name] = df["Fbnq_mean"] * df["BbwOri"]
-    del df["Fbnq_mean"], df["BbwOri"]
+    df = df.drop(columns=["Fbnq_mean", "BbwOri"])
 
     return df
